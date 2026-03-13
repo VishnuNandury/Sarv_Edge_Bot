@@ -2,7 +2,8 @@ services:
   # ─── Backend: FastAPI + Pipecat ───────────────────────────────────────────
   - type: web
     name: sarvam-bot-backend
-    runtime: python
+    env: python
+    region: oregon
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -11,9 +12,7 @@ services:
       - key: APP_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: sarvam-bot-db
-          property: connectionString
+        sync: false
       - key: OPENAI_API_KEY
         sync: false
       - key: SARVAM_API_KEY
@@ -28,33 +27,23 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
-      - key: FRONTEND_URL
-        fromService:
-          name: sarvam-bot-frontend
-          type: web
-          property: host
-    plan: standard
+    plan: starter
 
   # ─── Frontend: Next.js ────────────────────────────────────────────────────
   - type: web
     name: sarvam-bot-frontend
-    runtime: node
+    env: node
+    region: oregon
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: sarvam-bot-backend
-          type: web
-          property: host
+        sync: false
       - key: NEXT_PUBLIC_WS_URL
-        fromService:
-          name: sarvam-bot-backend
-          type: web
-          property: host
+        sync: false
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
-    plan: standard
+        value: "3000"
+    plan: starter
