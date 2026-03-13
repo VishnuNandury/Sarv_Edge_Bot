@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/dashboard\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/voice-agent\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/conversations/\\\\[id\\\\]\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/customers/\\\\[id\\\\]\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/campaigns/\\\\[id\\\\]\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/analytics\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/settings\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/layout\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/dashboard\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/voice-agent\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/conversations\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/customers\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/campaigns\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/components/ui\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/lib\nmkdir -p C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/styles)",
+      "Bash(cd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/backend\" && python -m py_compile app/__init__.py app/config.py app/database.py app/models.py app/schemas.py && echo \"Core modules OK\")",
+      "Bash(cd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/backend\" && python -m py_compile app/flows/__init__.py app/flows/flow_definitions.py app/flows/flow_manager.py && echo \"Flows OK\" && python -m py_compile app/pipelines/__init__.py app/pipelines/base_pipeline.py app/pipelines/sarvam_pipeline.py app/pipelines/whisper_edge_pipeline.py && echo \"Pipelines OK\")",
+      "Bash(cd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/backend\" && python -m py_compile app/api/__init__.py app/api/dashboard.py app/api/customers.py app/api/conversations.py app/api/campaigns.py app/api/analytics.py app/api/voice.py app/main.py && echo \"API modules OK\")",
+      "Bash(cd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/backend\" && for f in app/main.py app/models.py app/schemas.py app/api/voice.py app/api/customers.py app/pipelines/base_pipeline.py app/pipelines/sarvam_pipeline.py app/flows/flow_definitions.py app/flows/flow_manager.py; do wc -l \"$f\"; done)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npm install 2>&1 | tail -20)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx next build 2>&1 | head -80)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx next build 2>&1)"
+    ]
+  }
+}
