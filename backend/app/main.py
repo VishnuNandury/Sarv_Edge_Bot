@@ -6,9 +6,11 @@ import logging
 import sys
 from contextlib import asynccontextmanager
 
+import os
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import create_tables
@@ -137,7 +139,10 @@ async def health_check():
 
 @app.get("/", tags=["system"])
 async def root():
-    """Root endpoint."""
+    """Serve frontend or return API info."""
+    frontend_index = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    if os.path.exists(frontend_index):
+        return FileResponse(frontend_index)
     return {
         "name": "Sarvam Bot API",
         "version": "1.0.0",
@@ -145,6 +150,12 @@ async def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# Mount Next.js static export — must be after all API routes
+_static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.exists(_static_dir):
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")
 
 
 # ─────────────────────────── Error Handlers ──────────────────────────────
