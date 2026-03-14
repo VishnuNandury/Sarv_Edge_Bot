@@ -186,7 +186,7 @@ class SarvamPipeline(BasePipeline):
             "loudness": 1.5,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
-            "model": "bulbul:v1",
+            "model": "bulbul:v3",
         }
 
         try:
