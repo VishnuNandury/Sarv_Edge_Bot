@@ -225,8 +225,30 @@ class WhisperEdgePipeline(BasePipeline):
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
         await self.start_session()
+        asyncio.ensure_future(self._send_greeting())
 
         return pc.localDescription.sdp
+
+    async def _queue_audio(self, audio_bytes: bytes) -> None:
+        await self._response_audio_queue.put(audio_bytes)
+
+    async def _send_greeting(self) -> None:
+        language = self.customer_context.get("preferred_language", "hi")
+        name = self.customer_context.get("name", "")
+        greeting = (
+            f"Namaste {name}ji. Main Priya bol rahi hoon, aapke loan account ke baare "
+            f"mein baat karni thi. Kya aap abhi baat kar sakte hain?"
+        )
+        try:
+            self._is_agent_speaking = True
+            audio = await self._synthesize_speech(greeting, language)
+            await self._emit_transcript("agent", greeting, 0)
+            await self._save_transcript("agent", greeting)
+            await self._response_audio_queue.put(audio)
+        except Exception as e:
+            logger.error(f"[WhisperEdge] Greeting error: {e}")
+        finally:
+            self._is_agent_speaking = False
 
     async def _mock_run(self) -> str:
         await self.start_session()
@@ -234,18 +256,19 @@ class WhisperEdgePipeline(BasePipeline):
 
     async def _audio_receive_loop(self, track) -> None:
         """Receive audio frames and process through pipeline."""
+        import av
         audio_buffer = bytearray()
-        SAMPLE_RATE = 16000
-        CHUNK_DURATION_MS = 500
-        CHUNK_SAMPLES = int(SAMPLE_RATE * CHUNK_DURATION_MS / 1000)
-        CHUNK_BYTES = CHUNK_SAMPLES * 2
+        TARGET_RATE = 16000
+        CHUNK_BYTES = int(TARGET_RATE * 500 / 1000) * 2  # 500ms at 16kHz, 16-bit mono
+        resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_RATE)
 
         try:
             while self.is_running and not self.is_ended:
                 try:
                     frame = await asyncio.wait_for(track.recv(), timeout=1.0)
-                    pcm_data = bytes(frame.planes[0])
-                    audio_buffer.extend(pcm_data)
+                    for resampled in resampler.resample(frame):
+                        pcm_data = bytes(resampled.planes[0])
+                        audio_buffer.extend(pcm_data)
 
                     while len(audio_buffer) >= CHUNK_BYTES:
                         chunk = bytes(audio_buffer[:CHUNK_BYTES])

@@ -114,6 +114,10 @@ class BasePipeline(ABC):
         """Start pipeline. Accept WebRTC offer, return SDP answer."""
         ...
 
+    async def _queue_audio(self, audio_bytes: bytes) -> None:
+        """Queue audio bytes for playback. Subclasses with response queues override this."""
+        pass
+
     @abstractmethod
     async def _transcribe_audio(self, audio_bytes: bytes, language: str = "hi") -> str:
         """Convert audio bytes to text using STT service."""
@@ -359,7 +363,7 @@ class BasePipeline(ABC):
                     audio = await self._synthesize_speech(idle_prompt)
                     await self._emit_transcript("agent", idle_prompt, 0)
                     await self._save_transcript("agent", idle_prompt)
-                    return audio
+                    await self._queue_audio(audio)
                 except Exception as e:
                     logger.error(f"Idle TTS error: {e}")
             else:

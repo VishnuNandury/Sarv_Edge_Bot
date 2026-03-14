@@ -265,8 +265,32 @@ class SarvamPipeline(BasePipeline):
         await pc.setLocalDescription(answer)
 
         await self.start_session()
+        asyncio.ensure_future(self._send_greeting())
 
         return pc.localDescription.sdp
+
+    async def _queue_audio(self, audio_bytes: bytes) -> None:
+        """Put TTS PCM bytes into the WebRTC output queue."""
+        await self._response_audio_queue.put(audio_bytes)
+
+    async def _send_greeting(self) -> None:
+        """Synthesize and send the opening greeting after WebRTC connects."""
+        language = self.customer_context.get("preferred_language", "hi")
+        name = self.customer_context.get("name", "")
+        greeting = (
+            f"Namaste {name}ji. Main Priya bol rahi hoon, aapke loan account ke baare "
+            f"mein baat karni thi. Kya aap abhi baat kar sakte hain?"
+        )
+        try:
+            self._is_agent_speaking = True
+            audio = await self._synthesize_speech(greeting, language)
+            await self._emit_transcript("agent", greeting, 0)
+            await self._save_transcript("agent", greeting)
+            await self._response_audio_queue.put(audio)
+        except Exception as e:
+            logger.error(f"[SarvamPipeline] Greeting error: {e}")
+        finally:
+            self._is_agent_speaking = False
 
     async def _mock_run(self) -> str:
         """Fallback when aiortc is not available (testing)."""
@@ -275,20 +299,24 @@ class SarvamPipeline(BasePipeline):
 
     async def _audio_receive_loop(self, track) -> None:
         """Continuously receive audio frames from the WebRTC track."""
+        import av
         logger.info(f"[SarvamPipeline:{self.session_id}] Starting audio receive loop")
         audio_buffer = bytearray()
+        TARGET_RATE = 16000
         CHUNK_DURATION_MS = 500  # Process every 500ms
-        SAMPLE_RATE = 16000
-        CHUNK_SAMPLES = int(SAMPLE_RATE * CHUNK_DURATION_MS / 1000)
-        CHUNK_BYTES = CHUNK_SAMPLES * 2  # 16-bit = 2 bytes/sample
+        CHUNK_BYTES = int(TARGET_RATE * CHUNK_DURATION_MS / 1000) * 2  # 16-bit mono
+
+        # Resampler converts incoming WebRTC audio (48kHz stereo) → 16kHz mono s16
+        resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_RATE)
 
         try:
             while self.is_running and not self.is_ended:
                 try:
                     frame = await asyncio.wait_for(track.recv(), timeout=1.0)
-                    # Convert AudioFrame to raw PCM bytes
-                    pcm_data = bytes(frame.planes[0])
-                    audio_buffer.extend(pcm_data)
+                    # Resample to 16kHz mono regardless of incoming format
+                    for resampled in resampler.resample(frame):
+                        pcm_data = bytes(resampled.planes[0])
+                        audio_buffer.extend(pcm_data)
 
                     # Process in chunks
                     while len(audio_buffer) >= CHUNK_BYTES:
