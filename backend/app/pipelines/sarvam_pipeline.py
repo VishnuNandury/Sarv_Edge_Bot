@@ -40,18 +40,18 @@ LANGUAGE_MAP = {
     "pa": "pa-IN",
 }
 
-# Sarvam TTS voice mapping by language
+# Sarvam TTS voice mapping by language — bulbul:v3 compatible voices
 TTS_VOICE_MAP = {
-    "hi-IN": "anushka",
-    "en-IN": "vidya",
-    "ta-IN": "pavithra",
-    "te-IN": "hema",
-    "kn-IN": "nisha",
-    "ml-IN": "asha",
-    "mr-IN": "mohini",
-    "gu-IN": "indu",
-    "bn-IN": "priyamvada",
-    "pa-IN": "arvind",
+    "hi-IN": "priya",
+    "en-IN": "neha",
+    "ta-IN": "pooja",
+    "te-IN": "simran",
+    "kn-IN": "kavya",
+    "ml-IN": "ritu",
+    "mr-IN": "priya",
+    "gu-IN": "neha",
+    "bn-IN": "pooja",
+    "pa-IN": "rahul",
 }
 
 
