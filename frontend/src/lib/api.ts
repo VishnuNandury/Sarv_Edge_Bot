@@ -1,8 +1,10 @@
 import axios from 'axios';
 import type { AgentConfig, Customer, Campaign, DashboardStats, AnalyticsOverview } from './types';
 
+// In production (single-service Docker), frontend and API share the same host.
+// Use relative URLs unless NEXT_PUBLIC_API_URL is explicitly set (local dev).
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '',
   headers: { 'Content-Type': 'application/json' },
 });
 

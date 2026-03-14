@@ -168,7 +168,12 @@ export default function VoiceInterface({
       await pc.setRemoteDescription({ type: 'answer', sdp: answerRes.data.sdp });
 
       // Connect WebSocket
-      const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/ws/voice/${newSessionId}`;
+      // Derive WebSocket URL from current page location when no env var is set
+      const wsBase = process.env.NEXT_PUBLIC_WS_URL ||
+        (typeof window !== 'undefined'
+          ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+          : 'ws://localhost:8000');
+      const wsUrl = `${wsBase}/ws/voice/${newSessionId}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
