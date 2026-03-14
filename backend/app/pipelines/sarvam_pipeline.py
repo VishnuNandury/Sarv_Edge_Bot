@@ -361,34 +361,47 @@ class SarvamPipeline(BasePipeline):
 
 
 try:
-    from aiortc import MediaStreamTrack as _MediaStreamTrackBase
+    from aiortc.mediastreams import AudioStreamTrack as _AudioStreamTrackBase
 except ImportError:
-    _MediaStreamTrackBase = object  # type: ignore[assignment,misc]
+    _AudioStreamTrackBase = object  # type: ignore[assignment,misc]
 
 
-class AudioOutputTrack(_MediaStreamTrackBase):
+class AudioOutputTrack(_AudioStreamTrackBase):
     """
-    aiortc MediaStreamTrack that streams TTS PCM audio from an asyncio Queue.
-    Returns av.AudioFrame silence when the queue is empty.
+    aiortc AudioStreamTrack that streams TTS PCM audio from an asyncio Queue.
+    Inherits from AudioStreamTrack (which provides id, readyState, and timing).
+    Returns av.AudioFrame with silence when the queue is empty.
     """
 
     kind = "audio"
     SAMPLE_RATE = 16000
-    SAMPLES_PER_FRAME = 960  # 60 ms at 16 kHz
+    SAMPLES_PER_FRAME = 320  # 20 ms at 16 kHz
 
     def __init__(self, queue: asyncio.Queue):
-        if _MediaStreamTrackBase is not object:
+        if _AudioStreamTrackBase is not object:
             super().__init__()
         self._queue = queue
+        self._start: Optional[float] = None
+        self._pts: int = 0
 
     async def recv(self):
         import av
+        import fractions
+        import time
         import numpy as np
 
-        pts, time_base = await self.next_timestamp()  # provided by MediaStreamTrack
+        # Maintain a real-time clock so the RTP sender doesn't drift
+        if self._start is None:
+            self._start = time.time()
+        else:
+            self._pts += self.SAMPLES_PER_FRAME
+            expected = self._start + self._pts / self.SAMPLE_RATE
+            wait = expected - time.time()
+            if wait > 0:
+                await asyncio.sleep(wait)
 
         try:
-            audio_bytes = await asyncio.wait_for(self._queue.get(), timeout=0.05)
+            audio_bytes = await asyncio.wait_for(self._queue.get(), timeout=0.005)
             samples = np.frombuffer(audio_bytes, dtype=np.int16)
         except (asyncio.TimeoutError, Exception):
             samples = np.zeros(self.SAMPLES_PER_FRAME, dtype=np.int16)
@@ -398,12 +411,9 @@ class AudioOutputTrack(_MediaStreamTrackBase):
         else:
             samples = samples[: self.SAMPLES_PER_FRAME]
 
-        frame = av.AudioFrame.from_ndarray(
-            samples.reshape(1, -1).astype(np.int16),
-            format="s16",
-            layout="mono",
-        )
-        frame.pts = pts
-        frame.time_base = time_base
+        frame = av.AudioFrame(format="s16", layout="mono", samples=self.SAMPLES_PER_FRAME)
+        frame.planes[0].update(samples.astype(np.int16).tobytes())
+        frame.pts = self._pts
         frame.sample_rate = self.SAMPLE_RATE
+        frame.time_base = fractions.Fraction(1, self.SAMPLE_RATE)
         return frame

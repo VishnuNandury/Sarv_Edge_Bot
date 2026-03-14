@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, and_, case
+from sqlalchemy import func, select, and_, case, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -164,17 +164,16 @@ async def _get_dashboard_stats(db: AsyncSession) -> Dict[str, Any]:
     ]
 
     # Hourly calls (last 24 hours)
+    # Use text("1") for GROUP BY/ORDER BY to avoid asyncpg re-parameterizing the
+    # date_trunc literal "hour" as separate bind params, which confuses PostgreSQL.
     hourly_result = await db.execute(
         select(
             func.date_trunc("hour", CallSession.created_at).label("hour"),
             func.count(CallSession.id).label("count")
         ).where(
             CallSession.created_at >= day_start_24h
-        ).group_by(
-            func.date_trunc("hour", CallSession.created_at)
-        ).order_by(
-            func.date_trunc("hour", CallSession.created_at)
-        )
+        ).group_by(text("1"))
+        .order_by(text("1"))
     )
     hourly_rows = hourly_result.fetchall()
     hourly_calls = [

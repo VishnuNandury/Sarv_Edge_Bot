@@ -71,6 +71,9 @@ class BasePipeline(ABC):
         self.db = db_session
         self.ws_emit = ws_emit
         self.agent_config = agent_config or {}
+        # In testing mode (no customer_id) there is no call_sessions DB row,
+        # so skip all DB writes to avoid FK constraint violations.
+        self._has_db_record: bool = bool(customer_id)
 
         # State
         self.is_running = False
@@ -366,6 +369,9 @@ class BasePipeline(ABC):
 
     async def _save_transcript(self, speaker: str, text: str) -> None:
         """Persist a transcript line to the database."""
+        if not self._has_db_record:
+            self.turn_index += 1
+            return
         from app.models import Transcript
         transcript = Transcript(
             id=str(uuid.uuid4()),
@@ -384,6 +390,8 @@ class BasePipeline(ABC):
 
     async def _save_session_metrics(self, duration_seconds: int) -> None:
         """Save aggregated metrics for the session."""
+        if not self._has_db_record:
+            return
         from app.models import SessionMetrics
 
         avg_stt = sum(self.stt_latencies) / len(self.stt_latencies) if self.stt_latencies else None
@@ -427,6 +435,8 @@ class BasePipeline(ABC):
         duration: int,
     ) -> None:
         """Update the CallSession record with final status."""
+        if not self._has_db_record:
+            return
         from app.models import CallSession
         from sqlalchemy import select
 
