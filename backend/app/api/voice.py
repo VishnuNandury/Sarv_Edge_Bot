@@ -84,17 +84,44 @@ async def create_voice_session(
     Create a new voice call session.
     Returns session_id and ICE server configuration.
     """
-    # Verify customer exists
-    customer_result = await db.execute(
-        select(Customer).where(Customer.id == payload.customer_id)
-    )
-    customer = customer_result.scalar_one_or_none()
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
     # Validate flow
     if payload.flow_id not in FLOWS:
         raise HTTPException(status_code=400, detail=f"Unknown flow_id: {payload.flow_id}")
+
+    # Resolve customer: DB lookup if customer_id given, else use inline AgentConfig fields
+    customer = None
+    if payload.customer_id:
+        customer_result = await db.execute(
+            select(Customer).where(Customer.id == payload.customer_id)
+        )
+        customer = customer_result.scalar_one_or_none()
+
+    # Build customer context — prefer DB record, fall back to inline fields
+    if customer:
+        customer_context = {
+            "name": customer.name,
+            "phone": customer.phone,
+            "loan_amount": str(customer.loan_amount),
+            "outstanding_amount": str(customer.outstanding_amount),
+            "dpd": customer.dpd,
+            "due_date": str(customer.due_date) if customer.due_date else "N/A",
+            "loan_id": customer.loan_id or "",
+            "preferred_language": customer.preferred_language or "hi",
+            "segment": customer.segment,
+        }
+    else:
+        # Testing / demo mode — use fields from AgentConfig directly
+        customer_context = {
+            "name": payload.customer_name or "Test Customer",
+            "phone": "",
+            "loan_amount": str(payload.loan_amount or 0),
+            "outstanding_amount": str(payload.outstanding_amount or 0),
+            "dpd": payload.dpd or 0,
+            "due_date": payload.due_date or "N/A",
+            "loan_id": "",
+            "preferred_language": (payload.language or "hi-IN").split("-")[0],
+            "segment": "test",
+        }
 
     # Create DB session record
     session_id = str(uuid.uuid4())
@@ -112,19 +139,6 @@ async def create_voice_session(
     )
     db.add(db_session)
     await db.flush()
-
-    # Build customer context for pipeline
-    customer_context = {
-        "name": customer.name,
-        "phone": customer.phone,
-        "loan_amount": str(customer.loan_amount),
-        "outstanding_amount": str(customer.outstanding_amount),
-        "dpd": customer.dpd,
-        "due_date": str(customer.due_date) if customer.due_date else "N/A",
-        "loan_id": customer.loan_id or "",
-        "preferred_language": customer.preferred_language or "hi",
-        "segment": customer.segment,
-    }
 
     # Initialize pipeline based on agent_type
     pipeline = _create_pipeline(
@@ -148,7 +162,7 @@ async def create_voice_session(
             "credential": settings.TURN_CREDENTIAL,
         })
 
-    logger.info(f"[Voice] Created session {session_id} for customer {customer.name} ({payload.agent_type})")
+    logger.info(f"[Voice] Created session {session_id} for customer {customer_context['name']} ({payload.agent_type})")
 
     return VoiceSessionResponse(
         session_id=session_id,
@@ -160,7 +174,7 @@ async def create_voice_session(
 def _create_pipeline(
     agent_type: str,
     session_id: str,
-    customer_id: str,
+    customer_id: Optional[str],
     flow_id: str,
     customer_context: Dict[str, Any],
     db_session: AsyncSession,

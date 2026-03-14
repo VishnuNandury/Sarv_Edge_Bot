@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ─────────────────────────── Customer Schemas ────────────────────────────
@@ -218,10 +218,21 @@ class SessionMetricsRead(BaseModel):
 # ─────────────────────────── Voice Schemas ───────────────────────────────
 
 class VoiceSessionCreate(BaseModel):
-    customer_id: str
-    campaign_id: Optional[str] = None
-    agent_type: str = Field(default="sarvam")
-    flow_id: str = Field(default="flow_basic")
+    model_config = ConfigDict(populate_by_name=True)
+
+    # Accept both camelCase (from frontend AgentConfig) and snake_case
+    customer_id: Optional[str] = Field(default=None, alias="customerId")
+    campaign_id: Optional[str] = Field(default=None, alias="campaignId")
+    agent_type: str = Field(default="sarvam", alias="agentType")
+    flow_id: str = Field(default="flow_basic", alias="flowId")
+
+    # Extra fields from AgentConfig (stored for context, not persisted to DB)
+    customer_name: Optional[str] = Field(default=None, alias="customerName")
+    loan_amount: Optional[float] = Field(default=None, alias="loanAmount")
+    outstanding_amount: Optional[float] = Field(default=None, alias="outstandingAmount")
+    dpd: Optional[int] = None
+    due_date: Optional[str] = Field(default=None, alias="dueDate")
+    language: Optional[str] = Field(default="hi-IN", alias="language")
 
 
 class VoiceSessionResponse(BaseModel):
