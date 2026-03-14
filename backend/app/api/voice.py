@@ -61,14 +61,16 @@ async def get_ice_servers() -> Dict[str, Any]:
     servers = [{"urls": "stun:stun.l.google.com:19302"}]
 
     if settings.TURN_URL:
+        # TURN_URL may be comma-separated — each URL becomes its own server entry for browser compat
+        turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
         servers.append({
-            "urls": settings.TURN_URL,
+            "urls": turn_urls,
             "username": settings.TURN_USERNAME,
             "credential": settings.TURN_CREDENTIAL,
         })
 
     return {
-        "ice_servers": servers,
+        "iceServers": servers,
         "stun_only": not bool(settings.TURN_URL),
     }
 
@@ -154,11 +156,12 @@ async def create_voice_session(
     _active_pipelines[session_id] = pipeline
     _ws_connections[session_id] = []
 
-    # ICE servers
+    # ICE servers — TURN_URL may be comma-separated
     ice_servers = [{"urls": "stun:stun.l.google.com:19302"}]
     if settings.TURN_URL:
+        turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
         ice_servers.append({
-            "urls": settings.TURN_URL,
+            "urls": turn_urls,
             "username": settings.TURN_USERNAME,
             "credential": settings.TURN_CREDENTIAL,
         })

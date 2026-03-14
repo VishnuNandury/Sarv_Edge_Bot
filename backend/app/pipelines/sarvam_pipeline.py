@@ -227,13 +227,14 @@ class SarvamPipeline(BasePipeline):
             logger.error("aiortc not installed. Using mock SDP answer.")
             return await self._mock_run()
 
-        # Build RTCConfiguration with proper aiortc objects (not plain dicts)
-        ice_server_objects = [RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
+        # Build RTCConfiguration — TURN_URL may be comma-separated (multiple URIs)
+        ice_server_objects = [RTCIceServer(urls="stun:stun.l.google.com:19302")]
         if settings.TURN_URL:
+            turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
             ice_server_objects.append(RTCIceServer(
-                urls=[settings.TURN_URL],
-                username=settings.TURN_USERNAME,
-                credential=settings.TURN_CREDENTIAL,
+                urls=turn_urls,
+                username=settings.TURN_USERNAME or None,
+                credential=settings.TURN_CREDENTIAL or None,
             ))
         pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_server_objects))
         self._peer_connection = pc
