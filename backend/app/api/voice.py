@@ -123,22 +123,23 @@ async def create_voice_session(
             "segment": "test",
         }
 
-    # Create DB session record
+    # Create DB session record (only when a real customer_id is present)
     session_id = str(uuid.uuid4())
     flow_def = FLOWS[payload.flow_id]
 
-    db_session = CallSession(
-        id=session_id,
-        customer_id=payload.customer_id,
-        campaign_id=payload.campaign_id,
-        agent_type=payload.agent_type,
-        flow_id=payload.flow_id,
-        tier=flow_def.get("tier", "tier_1"),
-        status="active",
-        start_time=datetime.now(timezone.utc),
-    )
-    db.add(db_session)
-    await db.flush()
+    if payload.customer_id:
+        db_session = CallSession(
+            id=session_id,
+            customer_id=payload.customer_id,
+            campaign_id=payload.campaign_id,
+            agent_type=payload.agent_type,
+            flow_id=payload.flow_id,
+            tier=flow_def.get("tier", "tier_1"),
+            status="active",
+            start_time=datetime.now(timezone.utc),
+        )
+        db.add(db_session)
+        await db.flush()
 
     # Initialize pipeline based on agent_type
     pipeline = _create_pipeline(
@@ -288,12 +289,10 @@ async def end_voice_session(
 
         _active_pipelines.pop(session_id, None)
     else:
-        # Update DB directly if pipeline is gone
+        # Update DB directly if pipeline is gone (skip for testing sessions with no DB record)
         result = await db.execute(select(CallSession).where(CallSession.id == session_id))
         session = result.scalar_one_or_none()
-        if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
-        if session.status == "active":
+        if session and session.status == "active":
             session.status = "completed"
             session.end_time = datetime.now(timezone.utc)
             await db.flush()
