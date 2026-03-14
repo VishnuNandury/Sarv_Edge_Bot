@@ -6,14 +6,17 @@ from app.config import settings
 
 
 def _build_engine():
+    from urllib.parse import urlparse, urlunparse
+
     url = settings.get_async_db_url()
 
-    # asyncpg does not support ?sslmode= — strip it and pass ssl via connect_args
-    connect_args = {}
-    for param in ("sslmode=require", "sslmode=prefer", "sslmode=verify-full"):
-        url = url.replace(f"?{param}", "").replace(f"&{param}", "")
+    # asyncpg does not support libpq query params (sslmode, channel_binding, etc.)
+    # Strip ALL query parameters from the URL entirely.
+    parsed = urlparse(url)
+    clean_url = urlunparse(parsed._replace(query=""))
 
-    # Neon (and most managed Postgres) requires SSL in production
+    # Pass SSL via connect_args instead
+    connect_args = {}
     if "neon.tech" in url or settings.APP_ENV == "production":
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -21,7 +24,7 @@ def _build_engine():
         connect_args["ssl"] = ctx
 
     return create_async_engine(
-        url,
+        clean_url,
         echo=False,
         pool_size=5,
         max_overflow=10,
