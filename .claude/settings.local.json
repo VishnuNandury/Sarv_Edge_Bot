@@ -8,7 +8,13 @@
       "Bash(cd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/backend\" && for f in app/main.py app/models.py app/schemas.py app/api/voice.py app/api/customers.py app/pipelines/base_pipeline.py app/pipelines/sarvam_pipeline.py app/flows/flow_definitions.py app/flows/flow_manager.py; do wc -l \"$f\"; done)",
       "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npm install 2>&1 | tail -20)",
       "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx next build 2>&1 | head -80)",
-      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx next build 2>&1)"
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx next build 2>&1)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npm run build 2>&1)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && rm -rf .next && npm run build 2>&1)",
+      "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx tsc --noEmit 2>&1 | head -50)",
+      "Bash(xxd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/customers/[id]/page.tsx\" | head -10)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/customers/[id]/page.tsx','utf8'\\); console.log\\(JSON.stringify\\(c.slice\\(0,200\\)\\)\\)\")",
+      "Bash(node -e \"\nconst fs = require\\('fs'\\);\nconst src = fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/node_modules/next/dist/build/index.js', 'utf8'\\);\nconst lines = src.split\\('\\\\n'\\);\nconsole.log\\(lines.slice\\(1285, 1305\\).join\\('\\\\n'\\)\\);\n\")"
     ]
   }
 }

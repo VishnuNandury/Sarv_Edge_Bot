@@ -3,13 +3,13 @@ Sarvam Bot - AI Voice Agent Platform
 FastAPI backend entry point.
 """
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 
-import os
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -139,23 +139,17 @@ async def health_check():
 
 @app.get("/", tags=["system"])
 async def root():
-    """Serve frontend or return API info."""
-    frontend_index = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
-    if os.path.exists(frontend_index):
-        return FileResponse(frontend_index)
-    return {
-        "name": "Sarvam Bot API",
-        "version": "1.0.0",
-        "description": "AI Voice Agent Platform for Loan Collection",
-        "docs": "/docs",
-        "health": "/health",
-    }
+    """Serve frontend index or API info."""
+    index = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    if os.path.exists(index):
+        return FileResponse(index)
+    return {"name": "Sarvam Bot API", "version": "1.0.0", "docs": "/docs"}
 
 
-# Mount Next.js static export — must be after all API routes
-_static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
-if os.path.exists(_static_dir):
-    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")
+# ── Mount Next.js static export (must come LAST, after all /api routes) ──────
+_static = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.exists(_static):
+    app.mount("/", StaticFiles(directory=_static, html=True), name="frontend")
 
 
 # ─────────────────────────── Error Handlers ──────────────────────────────
