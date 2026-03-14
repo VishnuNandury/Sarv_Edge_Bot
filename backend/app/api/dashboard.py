@@ -14,6 +14,27 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 @router.get("/stats")
 async def get_dashboard_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+    try:
+        return await _get_dashboard_stats(db)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Dashboard stats error: {e}")
+        # Return zeroed stats when DB is unavailable or tables not yet created
+        return {
+            "total_customers": 0,
+            "active_campaigns": 0,
+            "calls_today": 0,
+            "calls_this_week": 0,
+            "payment_rate": 0.0,
+            "avg_call_duration": 0.0,
+            "total_committed_today": "0",
+            "calls_by_outcome": {},
+            "recent_sessions": [],
+            "hourly_calls": [],
+        }
+
+
+async def _get_dashboard_stats(db: AsyncSession) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)

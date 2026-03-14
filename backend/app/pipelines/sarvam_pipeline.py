@@ -221,15 +221,21 @@ class SarvamPipeline(BasePipeline):
         Sets up audio track handling and starts pipeline loop.
         """
         try:
-            from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
+            from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack, RTCConfiguration, RTCIceServer
             from aiortc.contrib.media import MediaBlackhole
         except ImportError:
             logger.error("aiortc not installed. Using mock SDP answer.")
             return await self._mock_run()
 
-        ice_servers = self._build_ice_config()
-
-        pc = RTCPeerConnection(configuration={"iceServers": ice_servers})
+        # Build RTCConfiguration with proper aiortc objects (not plain dicts)
+        ice_server_objects = [RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
+        if settings.TURN_URL:
+            ice_server_objects.append(RTCIceServer(
+                urls=[settings.TURN_URL],
+                username=settings.TURN_USERNAME,
+                credential=settings.TURN_CREDENTIAL,
+            ))
+        pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_server_objects))
         self._peer_connection = pc
 
         @pc.on("track")

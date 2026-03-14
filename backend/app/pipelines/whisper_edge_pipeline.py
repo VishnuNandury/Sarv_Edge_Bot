@@ -190,13 +190,19 @@ class WhisperEdgePipeline(BasePipeline):
     async def run(self, offer_sdp: str) -> str:
         """Initialize WebRTC and return SDP answer."""
         try:
-            from aiortc import RTCPeerConnection, RTCSessionDescription
+            from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, RTCIceServer
         except ImportError:
             logger.warning("aiortc not installed, using mock SDP")
             return await self._mock_run()
 
-        ice_servers = self._build_ice_config()
-        pc = RTCPeerConnection(configuration={"iceServers": ice_servers})
+        ice_server_objects = [RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
+        if settings.TURN_URL:
+            ice_server_objects.append(RTCIceServer(
+                urls=[settings.TURN_URL],
+                username=settings.TURN_USERNAME,
+                credential=settings.TURN_CREDENTIAL,
+            ))
+        pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_server_objects))
         self._peer_connection = pc
 
         @pc.on("track")
