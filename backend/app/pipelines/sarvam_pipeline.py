@@ -178,12 +178,10 @@ class SarvamPipeline(BasePipeline):
         voice = TTS_VOICE_MAP.get(lang_code, "anushka")
 
         payload = {
-            "inputs": [text[:500]],  # Sarvam has char limit per request
+            "inputs": [text[:500]],
             "target_language_code": lang_code,
             "speaker": voice,
-            "pitch": 0,
-            "pace": 1.1,  # Slightly faster for professional tone
-            "loudness": 1.5,
+            "pace": 1.1,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
             "model": "bulbul:v3",
