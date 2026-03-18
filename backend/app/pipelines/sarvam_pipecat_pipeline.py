@@ -111,7 +111,7 @@ class SarvamPipecatPipeline:
             from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
             from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
             from pipecat.pipeline.pipeline import Pipeline
-            from pipecat.pipeline.task import PipelineTask, PipelineParams
+            from pipecat.pipeline.task import PipelineTask, PipelineParams, PipelineTaskParams
             from pipecat.services.sarvam.stt import SarvamSTTService, SarvamSTTSettings
             from pipecat.services.sarvam.tts import SarvamTTSService
             from pipecat.services.groq.llm import GroqLLMService, GroqLLMSettings
@@ -119,7 +119,7 @@ class SarvamPipecatPipeline:
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
             )
-            from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
+            from pipecat.processors.aggregators.llm_context import LLMContext
             from pipecat.transcriptions.language import Language
             from pipecat.transports.base_transport import TransportParams
             from pipecat.frames.frames import (
@@ -192,7 +192,7 @@ class SarvamPipecatPipeline:
 
         # ── Context & Aggregators ─────────────────────────────────────────
         system_prompt = self.flow_manager.get_system_prompt()
-        context = OpenAILLMContext(
+        context = LLMContext(
             messages=[{"role": "system", "content": system_prompt}]
         )
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
@@ -231,8 +231,8 @@ class SarvamPipecatPipeline:
             params=PipelineParams(
                 enable_metrics=True,
                 enable_usage_metrics=True,
+                observers=[MetricsLogObserver(), turn_observer],
             ),
-            observers=[MetricsLogObserver(), turn_observer],
         )
 
         # ── Event Handlers ────────────────────────────────────────────────
@@ -321,7 +321,8 @@ class SarvamPipecatPipeline:
             self._detect_and_transition(text)
 
         # ── Start pipeline in background ──────────────────────────────────
-        asyncio.ensure_future(self._task.run())
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self._task.run(PipelineTaskParams(loop=loop)))
 
         # Return SDP answer to caller
         answer = self._connection.get_answer()
