@@ -182,8 +182,8 @@ def _create_pipeline(
 ) -> Any:
     """Instantiate the correct pipeline class based on agent_type."""
     if agent_type == "sarvam":
-        from app.pipelines.sarvam_pipeline import SarvamPipeline
-        return SarvamPipeline(
+        from app.pipelines.sarvam_pipecat_pipeline import SarvamPipecatPipeline
+        return SarvamPipecatPipeline(
             session_id=session_id,
             customer_id=customer_id,
             flow_id=flow_id,

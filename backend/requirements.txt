@@ -24,6 +24,10 @@ edge-tts>=6.1.12
 aiortc>=1.9.0
 aioice>=0.9.0
 
+# ─────────────────── Pipecat (Sarvam + WebRTC pipeline) ───
+pipecat-ai[sarvam,webrtc]
+sarvamai>=0.1.0
+
 # ─────────────────── HTTP Client ──────────────────────────
 httpx>=0.27.0
 aiofiles>=24.1.0
