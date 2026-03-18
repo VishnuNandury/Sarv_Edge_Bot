@@ -10,8 +10,8 @@ alembic==1.14.0
 psycopg2-binary==2.9.10
 
 # ─────────────────── Pydantic / Settings ──────────────────
-pydantic==2.10.0
-pydantic-settings==2.6.0
+pydantic==2.11.3
+pydantic-settings==2.8.1
 
 # ─────────────────── AI / LLM ─────────────────────────────
 # Pin openai to a fixed version to prevent pip backtracking during resolution
