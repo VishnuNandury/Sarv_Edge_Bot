@@ -5,7 +5,7 @@ Architecture:
 - Transport:  Pipecat SmallWebRTC  (aiortc under the hood)
 - STT:        Sarvam saarika:v2.5  (WebSocket streaming, built-in VAD)
 - LLM:        Groq llama-3.3-70b   (OpenAI-compatible)
-- TTS:        Sarvam bulbul:v3     (HTTP, natural Hindi voices)
+- TTS:        Sarvam bulbul:v3     (WebSocket, natural Hindi voices)
 
 Pipecat features used:
 - Idle detection  (LLMUserAggregatorParams.user_idle_timeout)
@@ -113,13 +113,8 @@ class SarvamPipecatPipeline:
             from pipecat.pipeline.pipeline import Pipeline
             from pipecat.pipeline.task import PipelineTask, PipelineParams
             from pipecat.services.sarvam.stt import SarvamSTTService, SarvamSTTSettings
-            from pipecat.services.sarvam.tts import (
-                SarvamHttpTTSService,
-                SarvamTTSSettings,
-                SarvamTTSModel,
-                SarvamTTSSpeakerV3,
-            )
-            from pipecat.services.groq.llm import GroqLLMService
+            from pipecat.services.sarvam.tts import SarvamTTSService
+            from pipecat.services.groq.llm import GroqLLMService, GroqLLMSettings
             from pipecat.processors.aggregators.llm_response_universal import (
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
@@ -180,8 +175,8 @@ class SarvamPipecatPipeline:
         # ── LLM ───────────────────────────────────────────────────────────
         llm = GroqLLMService(
             api_key=settings.GROQ_API_KEY,
-            model=settings.DEFAULT_LLM_MODEL,
-            params=GroqLLMService.InputParams(
+            settings=GroqLLMSettings(
+                model=settings.DEFAULT_LLM_MODEL,
                 temperature=0.7,
                 max_tokens=150,
                 top_p=0.9,
@@ -189,13 +184,10 @@ class SarvamPipecatPipeline:
         )
 
         # ── TTS ───────────────────────────────────────────────────────────
-        tts = SarvamHttpTTSService(
+        tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
-            settings=SarvamTTSSettings(
-                model=SarvamTTSModel.BULBUL_V3,
-                speaker=SarvamTTSSpeakerV3.PRIYA,
-                language=pipecat_lang,
-            ),
+            voice_id="anushka",   # bulbul:v3 voices: anushka, manisha, vidya, arya (f) / abhilash, karun, hitesh (m)
+            model="bulbul:v3",
         )
 
         # ── Context & Aggregators ─────────────────────────────────────────

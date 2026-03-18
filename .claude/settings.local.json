@@ -17,7 +17,11 @@
       "Bash(node -e \"\nconst fs = require\\('fs'\\);\nconst src = fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/node_modules/next/dist/build/index.js', 'utf8'\\);\nconst lines = src.split\\('\\\\n'\\);\nconsole.log\\(lines.slice\\(1285, 1305\\).join\\('\\\\n'\\)\\);\n\")",
       "Bash(npx tsc:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.pipecat.ai)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(python:*)"
     ]
   }
 }
