@@ -190,26 +190,26 @@ export default function VoiceInterface({
               setTranscript((prev) => [
                 ...prev,
                 {
-                  speaker: (msg.speaker ?? msg.data?.speaker) as 'agent' | 'customer',
-                  text: msg.text ?? msg.data?.text,
-                  timestamp: msg.timestamp ?? msg.data?.timestamp,
+                  speaker: (msg.speaker ?? msg.data?.speaker ?? 'agent') as 'agent' | 'customer',
+                  text: msg.text ?? msg.data?.text ?? '',
+                  timestamp: msg.timestamp ?? msg.data?.timestamp ?? new Date().toISOString(),
                   turn_index: msg.turn_index ?? msg.data?.turn_index,
                 },
               ]);
               break;
             case 'node_change':
-              onNodeChange(msg.node_id ?? msg.node?.id ?? msg.data?.node_id);
+              onNodeChange(msg.node_id ?? msg.node?.id ?? msg.data?.node_id ?? '');
               break;
             case 'metrics':
               setMetrics(msg.data ?? msg);
               break;
             case 'audio_level':
-              setAgentLevel(msg.level ?? msg.data?.level);
+              setAgentLevel(msg.level ?? msg.data?.level ?? 0);
               break;
             case 'dtmf':
               setTranscript((prev) => [
                 ...prev,
-                { speaker: 'dtmf', text: msg.digit ?? msg.data?.digit, timestamp: new Date().toISOString() },
+                { speaker: 'dtmf', text: msg.digit ?? msg.data?.digit ?? '', timestamp: new Date().toISOString() },
               ]);
               break;
             case 'ended':
