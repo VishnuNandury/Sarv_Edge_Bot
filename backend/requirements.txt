@@ -7,42 +7,45 @@ python-multipart==0.0.12
 sqlalchemy==2.0.36
 asyncpg==0.30.0
 alembic==1.14.0
-psycopg2-binary>=2.9.9
+psycopg2-binary==2.9.10
 
 # ─────────────────── Pydantic / Settings ──────────────────
 pydantic==2.10.0
 pydantic-settings==2.6.0
 
 # ─────────────────── AI / LLM ─────────────────────────────
-openai>=1.54.0
-groq>=0.12.0
+# Pin openai to a fixed version to prevent pip backtracking during resolution
+openai==1.54.0
+groq==0.12.0
 
 # ─────────────────── Voice / Audio ────────────────────────
-edge-tts>=6.1.12
+edge-tts==6.1.12
 
 # ─────────────────── WebRTC ───────────────────────────────
-aiortc>=1.9.0
-aioice>=0.9.0
+# aiortc/aioice are also pulled in by pipecat-ai[webrtc]; pin here to lock
+aiortc==1.9.0
+aioice==0.9.0
 
 # ─────────────────── Pipecat (Sarvam + WebRTC pipeline) ───
-pipecat-ai[sarvam,webrtc]>=0.0.100
+# Pin exact version to prevent pip backtracking through hundreds of releases
+pipecat-ai[sarvam,webrtc]==0.0.105
 
 # ─────────────────── HTTP Client ──────────────────────────
-httpx>=0.27.0
-aiofiles>=24.1.0
+httpx==0.27.2
+aiofiles==24.1.0
 
 # ─────────────────── WebSocket ────────────────────────────
-websockets>=13.0
+websockets==13.1
 
 # ─────────────────── Data Processing ─────────────────────
-pandas>=2.0.0
-openpyxl>=3.1.0
-numpy>=1.26.0
+pandas==2.2.3
+openpyxl==3.1.5
+numpy==1.26.4
 
 # ─────────────────── Auth / Security ──────────────────────
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
 
 # ─────────────────── Utilities ────────────────────────────
-python-dateutil>=2.9.0
-pytz>=2024.1
+python-dateutil==2.9.0
+pytz==2024.1
