@@ -102,15 +102,49 @@ export interface ConversationFlow {
   edges: FlowEdge[];
 }
 
-// WebSocket event types
-export type WSEvent =
-  | { type: 'transcript'; data: { speaker: string; text: string; timestamp: string; turn_index: number } }
-  | { type: 'node_change'; data: { node_id: string; node_label: string } }
-  | { type: 'metrics'; data: { stt_latency_ms?: number; llm_latency_ms?: number; tts_latency_ms?: number; total_latency_ms?: number; tokens_input?: number; tokens_output?: number } }
-  | { type: 'dtmf'; data: { digit: string } }
-  | { type: 'audio_level'; data: { level: number } }
-  | { type: 'ended'; data: { reason: string; outcome?: string } }
-  | { type: 'error'; data: { message: string } };
+// WebSocket event types — backend may send flat fields or nested under `data`
+export type WSEvent = {
+  type: string;
+  // flat fields (actual backend format)
+  speaker?: string;
+  text?: string;
+  timestamp?: string;
+  turn_index?: number;
+  node_id?: string;
+  node?: { id: string; label?: string };
+  level?: number;
+  digit?: string;
+  message?: string;
+  status?: string;
+  outcome?: string;
+  // nested data (legacy / fallback)
+  data?: {
+    speaker?: string;
+    text?: string;
+    timestamp?: string;
+    turn_index?: number;
+    node_id?: string;
+    node_label?: string;
+    stt_latency_ms?: number;
+    llm_latency_ms?: number;
+    tts_latency_ms?: number;
+    total_latency_ms?: number;
+    tokens_input?: number;
+    tokens_output?: number;
+    digit?: string;
+    level?: number;
+    reason?: string;
+    outcome?: string;
+    message?: string;
+  };
+  // metrics flat fields
+  stt_latency_ms?: number;
+  llm_latency_ms?: number;
+  tts_latency_ms?: number;
+  total_latency_ms?: number;
+  tokens_input?: number;
+  tokens_output?: number;
+};
 
 export interface AgentConfig {
   customerName: string;
