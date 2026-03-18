@@ -186,7 +186,7 @@ class SarvamPipecatPipeline:
         # ── TTS ───────────────────────────────────────────────────────────
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
-            voice_id="anushka",   # bulbul:v3 voices: anushka, manisha, vidya, arya (f) / abhilash, karun, hitesh (m)
+            voice_id="priya",   # bulbul:v3 voices (from API): priya, neha, pooja, simran, kavya, ritu, ishita... (f) / rahul, rohan, amit, dev... (m)
             model="bulbul:v3",
         )
 
