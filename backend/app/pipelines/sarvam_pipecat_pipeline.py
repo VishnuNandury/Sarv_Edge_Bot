@@ -119,7 +119,7 @@ class SarvamPipecatPipeline:
                 SarvamTTSModel,
                 SarvamTTSSpeakerV3,
             )
-            from pipecat.services.openai.llm import OpenAILLMService
+            from pipecat.services.groq.llm import GroqLLMService
             from pipecat.processors.aggregators.llm_response_universal import (
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
@@ -178,11 +178,10 @@ class SarvamPipecatPipeline:
         )
 
         # ── LLM ───────────────────────────────────────────────────────────
-        llm = OpenAILLMService(
+        llm = GroqLLMService(
             api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
             model=settings.DEFAULT_LLM_MODEL,
-            params=OpenAILLMService.InputParams(
+            params=GroqLLMService.InputParams(
                 temperature=0.7,
                 max_tokens=150,
                 top_p=0.9,
