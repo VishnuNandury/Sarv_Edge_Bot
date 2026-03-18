@@ -14,7 +14,10 @@
       "Bash(cd C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend && npx tsc --noEmit 2>&1 | head -50)",
       "Bash(xxd \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/customers/[id]/page.tsx\" | head -10)",
       "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/src/app/customers/[id]/page.tsx','utf8'\\); console.log\\(JSON.stringify\\(c.slice\\(0,200\\)\\)\\)\")",
-      "Bash(node -e \"\nconst fs = require\\('fs'\\);\nconst src = fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/node_modules/next/dist/build/index.js', 'utf8'\\);\nconst lines = src.split\\('\\\\n'\\);\nconsole.log\\(lines.slice\\(1285, 1305\\).join\\('\\\\n'\\)\\);\n\")"
+      "Bash(node -e \"\nconst fs = require\\('fs'\\);\nconst src = fs.readFileSync\\('C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot/frontend/node_modules/next/dist/build/index.js', 'utf8'\\);\nconst lines = src.split\\('\\\\n'\\);\nconsole.log\\(lines.slice\\(1285, 1305\\).join\\('\\\\n'\\)\\);\n\")",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }

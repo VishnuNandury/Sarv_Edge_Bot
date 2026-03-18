@@ -55,6 +55,21 @@ TTS_VOICE_MAP = {
 }
 
 
+def _build_rtc_ice_servers(RTCIceServer):
+    """Return deduplicated RTCIceServer list (1 turn: + 1 turns: to avoid 5+ server warning)."""
+    if not settings.TURN_URL:
+        return [RTCIceServer(urls="stun:stun.l.google.com:19302")]
+    all_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
+    kept = []
+    has_turn = has_turns = False
+    for url in all_urls:
+        if url.startswith("turns:") and not has_turns:
+            kept.append(url); has_turns = True
+        elif url.startswith("turn:") and not has_turn:
+            kept.append(url); has_turn = True
+    return [RTCIceServer(urls=kept or all_urls[:2], username=settings.TURN_USERNAME or None, credential=settings.TURN_CREDENTIAL or None)]
+
+
 class SarvamPipeline(BasePipeline):
     """
     Full production pipeline:
@@ -225,15 +240,8 @@ class SarvamPipeline(BasePipeline):
             logger.error("aiortc not installed. Using mock SDP answer.")
             return await self._mock_run()
 
-        # Build RTCConfiguration — TURN_URL may be comma-separated (multiple URIs)
-        ice_server_objects = [RTCIceServer(urls="stun:stun.l.google.com:19302")]
-        if settings.TURN_URL:
-            turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
-            ice_server_objects.append(RTCIceServer(
-                urls=turn_urls,
-                username=settings.TURN_USERNAME or None,
-                credential=settings.TURN_CREDENTIAL or None,
-            ))
+        # Build RTCConfiguration — deduplicate TURN URLs (keep 1 turn: + 1 turns:)
+        ice_server_objects = _build_rtc_ice_servers(RTCIceServer)
         pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_server_objects))
         self._peer_connection = pc
 

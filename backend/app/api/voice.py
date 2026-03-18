@@ -58,19 +58,8 @@ async def ws_emit(session_id: str, event: Dict[str, Any]) -> None:
 @router.get("/ice-servers")
 async def get_ice_servers() -> Dict[str, Any]:
     """Return TURN/STUN server configuration for WebRTC clients."""
-    servers = [{"urls": "stun:stun.l.google.com:19302"}]
-
-    if settings.TURN_URL:
-        # TURN_URL may be comma-separated — each URL becomes its own server entry for browser compat
-        turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
-        servers.append({
-            "urls": turn_urls,
-            "username": settings.TURN_USERNAME,
-            "credential": settings.TURN_CREDENTIAL,
-        })
-
     return {
-        "iceServers": servers,
+        "iceServers": _build_ice_servers(),
         "stun_only": not bool(settings.TURN_URL),
     }
 
@@ -156,15 +145,8 @@ async def create_voice_session(
     _active_pipelines[session_id] = pipeline
     _ws_connections[session_id] = []
 
-    # ICE servers — TURN_URL may be comma-separated
-    ice_servers = [{"urls": "stun:stun.l.google.com:19302"}]
-    if settings.TURN_URL:
-        turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
-        ice_servers.append({
-            "urls": turn_urls,
-            "username": settings.TURN_USERNAME,
-            "credential": settings.TURN_CREDENTIAL,
-        })
+    # ICE servers — deduplicate TURN URLs to avoid browser "5+ servers" warning
+    ice_servers = _build_ice_servers()
 
     logger.info(f"[Voice] Created session {session_id} for customer {customer_context['name']} ({payload.agent_type})")
 
@@ -173,6 +155,21 @@ async def create_voice_session(
         ice_servers=ice_servers,
         status="created",
     )
+
+
+def _build_ice_servers() -> List[Dict[str, Any]]:
+    """Build deduplicated ICE server list (max 1 turn: + 1 turns: URL to avoid browser warning)."""
+    if not settings.TURN_URL:
+        return [{"urls": "stun:stun.l.google.com:19302"}]
+    all_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
+    kept: List[str] = []
+    has_turn = has_turns = False
+    for url in all_urls:
+        if url.startswith("turns:") and not has_turns:
+            kept.append(url); has_turns = True
+        elif url.startswith("turn:") and not has_turn:
+            kept.append(url); has_turn = True
+    return [{"urls": kept or all_urls[:2], "username": settings.TURN_USERNAME, "credential": settings.TURN_CREDENTIAL}]
 
 
 def _create_pipeline(

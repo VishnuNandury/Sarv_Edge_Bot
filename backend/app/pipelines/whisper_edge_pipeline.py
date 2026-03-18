@@ -195,14 +195,8 @@ class WhisperEdgePipeline(BasePipeline):
             logger.warning("aiortc not installed, using mock SDP")
             return await self._mock_run()
 
-        ice_server_objects = [RTCIceServer(urls="stun:stun.l.google.com:19302")]
-        if settings.TURN_URL:
-            turn_urls = [u.strip() for u in settings.TURN_URL.split(",") if u.strip()]
-            ice_server_objects.append(RTCIceServer(
-                urls=turn_urls,
-                username=settings.TURN_USERNAME or None,
-                credential=settings.TURN_CREDENTIAL or None,
-            ))
+        from app.pipelines.sarvam_pipeline import _build_rtc_ice_servers
+        ice_server_objects = _build_rtc_ice_servers(RTCIceServer)
         pc = RTCPeerConnection(configuration=RTCConfiguration(iceServers=ice_server_objects))
         self._peer_connection = pc
 
