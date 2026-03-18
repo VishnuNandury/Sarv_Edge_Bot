@@ -268,8 +268,28 @@ class SarvamPipeline(BasePipeline):
         return pc.localDescription.sdp
 
     async def _queue_audio(self, audio_bytes: bytes) -> None:
-        """Put TTS PCM bytes into the WebRTC output queue."""
-        await self._response_audio_queue.put(audio_bytes)
+        """
+        Split TTS audio into per-frame PCM chunks for AudioOutputTrack.recv().
+        Sarvam TTS returns WAV format — strip the header first.
+        """
+        import io, wave
+
+        # Strip WAV header → raw 16-bit mono PCM
+        if audio_bytes[:4] == b"RIFF":
+            try:
+                with wave.open(io.BytesIO(audio_bytes), "rb") as wf:
+                    raw_pcm = wf.readframes(wf.getnframes())
+            except Exception:
+                raw_pcm = audio_bytes[44:]  # fallback: skip standard 44-byte header
+        else:
+            raw_pcm = audio_bytes
+
+        # Queue in SAMPLES_PER_FRAME-sized chunks (640 bytes = 320 samples × 2 bytes)
+        frame_bytes = AudioOutputTrack.SAMPLES_PER_FRAME * 2
+        for i in range(0, len(raw_pcm), frame_bytes):
+            chunk = raw_pcm[i : i + frame_bytes]
+            if chunk:
+                await self._response_audio_queue.put(chunk)
 
     async def _send_greeting(self) -> None:
         """Synthesize and send the opening greeting after WebRTC connects."""

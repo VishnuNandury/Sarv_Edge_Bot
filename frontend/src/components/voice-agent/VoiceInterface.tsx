@@ -190,26 +190,26 @@ export default function VoiceInterface({
               setTranscript((prev) => [
                 ...prev,
                 {
-                  speaker: msg.data.speaker as 'agent' | 'customer',
-                  text: msg.data.text,
-                  timestamp: msg.data.timestamp,
-                  turn_index: msg.data.turn_index,
+                  speaker: (msg.speaker ?? msg.data?.speaker) as 'agent' | 'customer',
+                  text: msg.text ?? msg.data?.text,
+                  timestamp: msg.timestamp ?? msg.data?.timestamp,
+                  turn_index: msg.turn_index ?? msg.data?.turn_index,
                 },
               ]);
               break;
             case 'node_change':
-              onNodeChange(msg.data.node_id);
+              onNodeChange(msg.node_id ?? msg.node?.id ?? msg.data?.node_id);
               break;
             case 'metrics':
-              setMetrics(msg.data);
+              setMetrics(msg.data ?? msg);
               break;
             case 'audio_level':
-              setAgentLevel(msg.data.level);
+              setAgentLevel(msg.level ?? msg.data?.level);
               break;
             case 'dtmf':
               setTranscript((prev) => [
                 ...prev,
-                { speaker: 'dtmf', text: msg.data.digit, timestamp: new Date().toISOString() },
+                { speaker: 'dtmf', text: msg.digit ?? msg.data?.digit, timestamp: new Date().toISOString() },
               ]);
               break;
             case 'ended':
@@ -217,7 +217,7 @@ export default function VoiceInterface({
               onConnectionChange(false, false);
               break;
             case 'error':
-              console.error('WS Error:', msg.data.message);
+              console.error('WS Error:', msg.message ?? msg.data?.message);
               break;
           }
         } catch {

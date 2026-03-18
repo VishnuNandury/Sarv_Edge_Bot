@@ -230,7 +230,24 @@ class WhisperEdgePipeline(BasePipeline):
         return pc.localDescription.sdp
 
     async def _queue_audio(self, audio_bytes: bytes) -> None:
-        await self._response_audio_queue.put(audio_bytes)
+        """Split TTS WAV/PCM audio into per-frame chunks for AudioOutputTrack."""
+        import io, wave
+        FRAME_SAMPLES = 320
+        FRAME_BYTES = FRAME_SAMPLES * 2  # 16-bit mono
+
+        if audio_bytes[:4] == b"RIFF":
+            try:
+                with wave.open(io.BytesIO(audio_bytes), "rb") as wf:
+                    raw_pcm = wf.readframes(wf.getnframes())
+            except Exception:
+                raw_pcm = audio_bytes[44:]
+        else:
+            raw_pcm = audio_bytes
+
+        for i in range(0, len(raw_pcm), FRAME_BYTES):
+            chunk = raw_pcm[i : i + FRAME_BYTES]
+            if chunk:
+                await self._response_audio_queue.put(chunk)
 
     async def _send_greeting(self) -> None:
         language = self.customer_context.get("preferred_language", "hi")
