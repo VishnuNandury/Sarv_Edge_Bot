@@ -21,7 +21,11 @@
       "Bash(curl:*)",
       "WebFetch(domain:docs.pipecat.ai)",
       "WebFetch(domain:pypi.org)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(cat C:/Users/vishn/AppData/Roaming/Python/Python313/site-packages/pipecat-ai-*.dist-info/METADATA)",
+      "Bash(find C:UsersvishnAppDataRoamingPythonPython313site-packagespipecat -type f -name *.py -exec grep -l smart {})",
+      "Bash(2)"
     ]
   }
 }

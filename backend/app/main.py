@@ -27,6 +27,16 @@ logger = logging.getLogger(__name__)
 
 # ─────────────────────────── App Lifespan ────────────────────────────────
 
+def _warm_up_pipecat() -> None:
+    """Pre-load the Smart Turn ONNX model at startup so the first session doesn't pay the ~0.5s cost."""
+    try:
+        from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+        LocalSmartTurnAnalyzerV3()
+        logger.info("Pipecat Smart Turn model pre-warmed.")
+    except Exception as e:
+        logger.warning(f"Pipecat warm-up skipped: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown lifecycle."""
@@ -41,6 +51,8 @@ async def lifespan(app: FastAPI):
         logger.error(f"Database initialization failed: {e}")
         # Don't crash on startup — DB might connect later
         logger.warning("Continuing without confirmed DB connection...")
+
+    _warm_up_pipecat()
 
     yield
 

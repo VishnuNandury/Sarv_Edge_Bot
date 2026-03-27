@@ -186,8 +186,11 @@ class SarvamPipecatPipeline:
         # ── TTS ───────────────────────────────────────────────────────────
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
-            voice_id="priya",   # bulbul:v3 voices (from API): priya, neha, pooja, simran, kavya, ritu, ishita... (f) / rahul, rohan, amit, dev... (m)
+            voice_id="priya",   # bulbul:v3 voices (from API): priya, neha, pooja, simran, kavya, ritu... (f) / rahul, rohan, amit, dev... (m)
             model="bulbul:v3",
+            params=SarvamTTSService.InputParams(
+                language=pipecat_lang,  # Critical: set correct language so Hindi text is pronounced in Hindi, not English
+            ),
         )
 
         # ── Context & Aggregators ─────────────────────────────────────────
@@ -229,6 +232,8 @@ class SarvamPipecatPipeline:
         self._task = PipelineTask(
             pipeline,
             params=PipelineParams(
+                allow_interruptions=False,        # Loan collection: don't let VAD cut off agent mid-sentence
+                audio_out_sample_rate=24000,      # Match bulbul:v3 native output rate
                 enable_metrics=True,
                 enable_usage_metrics=True,
                 observers=[MetricsLogObserver(), turn_observer],
