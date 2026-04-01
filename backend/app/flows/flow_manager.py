@@ -286,6 +286,96 @@ class FlowManager:
             "session_id": self.session_id,
         }
 
+    def process_single_edge_transition(self) -> Optional[str]:
+        """
+        If the current node has exactly one outgoing LLM edge, auto-advance to it.
+        Called after the agent finishes speaking (on_assistant_turn_stopped) so that
+        action nodes advance without waiting for a specific customer keyword.
+        Does nothing for decision/multi-edge nodes or end nodes.
+        """
+        if self.current_node.type == "end":
+            return None
+        outgoing = [e for e in self.get_outgoing_edges(self.current_node_id) if e.type == "llm"]
+        if len(outgoing) == 1:
+            target = outgoing[0].target
+            self.transition_to(target)
+            return target
+        return None
+
+    def process_customer_response(self, text: str) -> Optional[str]:
+        """
+        Detect customer intent from their utterance and transition for decision nodes
+        (nodes with multiple outgoing edges).  Called from on_user_turn_stopped.
+
+        Handles:
+        - Yes / No → route to positive / negative edge by label pattern
+        - Payment / objection / callback keywords → route to matching edge
+        Single-edge nodes are handled by process_single_edge_transition instead.
+        """
+        outgoing = [e for e in self.get_outgoing_edges(self.current_node_id) if e.type == "llm"]
+        if len(outgoing) <= 1:
+            return None  # Single-edge nodes handled after agent speaks
+
+        text_lower = text.lower()
+        words = set(text_lower.split())
+
+        YES_WORDS = {"yes", "haan", "han", "ha", "bilkul", "zaroor", "ok",
+                     "okay", "sure", "right", "correct", "done", "haa", "yep", "yup"}
+        NO_WORDS  = {"no", "nahi", "nhi", "na", "nahin", "nope", "mat"}
+        PAYMENT_WORDS   = {"payment", "paid", "bheja", "transfer", "upi", "neft"}
+        OBJECTION_WORDS = {"problem", "issue", "unable", "cant", "emergency", "job", "medical"}
+        CALLBACK_WORDS  = {"callback", "later", "busy"}
+
+        is_yes     = bool(words & YES_WORDS) or "हाँ" in text or "हां" in text or "जी हाँ" in text
+        is_no      = bool(words & NO_WORDS)  or "नहीं" in text
+        has_payment   = any(w in text_lower for w in PAYMENT_WORDS) or "कर दिया" in text
+        has_objection = any(w in text_lower for w in OBJECTION_WORDS)
+        has_callback  = any(w in text_lower for w in CALLBACK_WORDS) or "बाद में" in text
+
+        def label(e: FlowEdge) -> str:
+            return e.label.lower()
+
+        def is_negative_edge(e: FlowEdge) -> bool:
+            return (label(e).startswith("no ") or "not " in label(e)
+                    or "refused" in label(e) or "unavailable" in label(e))
+
+        def edge_has(e: FlowEdge, *words: str) -> bool:
+            return any(w in label(e) for w in words)
+
+        # ── Specific intent matching first ────────────────────────────────
+        if has_payment:
+            for edge in outgoing:
+                if edge_has(edge, "payment", "paid"):
+                    self.transition_to(edge.target)
+                    return edge.target
+
+        if has_callback:
+            for edge in outgoing:
+                if edge_has(edge, "callback", "not available", "available"):
+                    self.transition_to(edge.target)
+                    return edge.target
+
+        if has_objection:
+            for edge in outgoing:
+                if edge_has(edge, "objection", "problem"):
+                    self.transition_to(edge.target)
+                    return edge.target
+
+        # ── Yes / No fallback ────────────────────────────────────────────
+        if is_yes and not is_no:
+            for edge in outgoing:
+                if not is_negative_edge(edge):
+                    self.transition_to(edge.target)
+                    return edge.target
+
+        if is_no and not is_yes:
+            for edge in outgoing:
+                if is_negative_edge(edge):
+                    self.transition_to(edge.target)
+                    return edge.target
+
+        return None
+
     def get_all_nodes(self) -> List[Dict[str, Any]]:
         return [n.to_dict() for n in self.nodes.values()]
 

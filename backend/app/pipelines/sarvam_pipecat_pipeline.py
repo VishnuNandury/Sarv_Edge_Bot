@@ -266,6 +266,11 @@ class SarvamPipecatPipeline:
             await self._task.queue_frames([TTSSpeakFrame(greeting)])
             await self._save_transcript("agent", greeting)
             await self._emit_transcript("agent", greeting, 0)
+            # The greeting bypasses the LLM (TTSSpeakFrame goes direct to TTS).
+            # Advance the flow past the greeting node now so the LLM context
+            # is already on the next step when the customer first responds.
+            self.flow_manager.process_single_edge_transition()
+            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(transport, client):
@@ -313,10 +318,11 @@ class SarvamPipecatPipeline:
             await self._save_transcript("customer", text)
             await self._emit_transcript("customer", text, 0)
 
-            # Update system prompt if flow has transitioned
-            new_prompt = self.flow_manager.get_system_prompt()
-            if new_prompt != system_prompt:
-                context.set_messages([{"role": "system", "content": new_prompt}])
+            # For decision nodes (multiple outgoing edges): detect yes/no and
+            # other intents from the customer's utterance and transition.
+            self.flow_manager.process_customer_response(text)
+            # Always refresh the system prompt so the LLM sees the current node.
+            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
 
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
         async def on_assistant_turn_stopped(aggregator, message):
@@ -324,8 +330,10 @@ class SarvamPipecatPipeline:
             logger.info(f"[SarvamPipecat:{self.session_id}] Agent: {text[:80]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
-            # Intent-based flow transition
-            self._detect_and_transition(text)
+            # For action nodes (single outgoing edge): auto-advance after agent
+            # speaks — no customer keyword needed to trigger the transition.
+            self.flow_manager.process_single_edge_transition()
+            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
 
         # ── Start pipeline in background ──────────────────────────────────
         loop = asyncio.get_event_loop()
@@ -336,22 +344,6 @@ class SarvamPipecatPipeline:
         return answer["sdp"]
 
     # ─────────────────────────── Helpers ─────────────────────────────────
-
-    def _detect_and_transition(self, text: str) -> None:
-        combined = text.lower()
-        intent = None
-        if any(w in combined for w in ["payment kar diya", "paid", "bhej diya", "transfer kar diya"]):
-            intent = "payment made"
-        elif any(w in combined for w in ["karunga", "karenge", "de dunga", "ok", "commitment"]):
-            intent = "date committed"
-        elif any(w in combined for w in ["nahi kar sakta", "problem", "mushkil", "issue"]):
-            intent = "objection"
-        elif any(w in combined for w in ["baad mein", "call back", "callback", "baad me"]):
-            intent = "not available"
-        elif any(w in combined for w in ["dhanyawad", "shukriya", "thank", "bye", "alvida"]):
-            intent = "done"
-        if intent:
-            self.flow_manager.process_llm_intent(intent)
 
     async def _emit(self, event: Dict[str, Any]) -> None:
         try:
