@@ -36,6 +36,10 @@ export default function VoiceAgentPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentNodeId, setCurrentNodeId] = useState<string | undefined>();
 
+  const handleFlowChange = useCallback((flowId: string) => {
+    setConfig(prev => ({ ...prev, flowId }));
+  }, []);
+
   const handleStart = useCallback((cfg: AgentConfigType) => {
     setConfig(cfg);
     setIsConnecting(true);
@@ -64,6 +68,7 @@ export default function VoiceAgentPage() {
       <div className="w-[300px] flex-shrink-0 border-r border-[#2a2d38] bg-[#111318] overflow-hidden flex flex-col">
         <AgentConfig
           onStart={handleStart}
+          onFlowChange={handleFlowChange}
           isConnected={isConnected}
           isConnecting={isConnecting}
         />

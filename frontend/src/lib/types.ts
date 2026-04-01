@@ -153,7 +153,7 @@ export interface AgentConfig {
   outstandingAmount: number;
   dpd: number;
   dueDate: string;
-  flowId: 'flow_basic' | 'flow_standard' | 'flow_advanced';
+  flowId: string;
   agentType: 'sarvam' | 'whisper_edge';
   language: string;
 }

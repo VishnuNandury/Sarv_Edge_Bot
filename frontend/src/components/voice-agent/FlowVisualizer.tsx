@@ -159,6 +159,25 @@ const FLOW_DEFINITIONS: Record<string, { nodes: Array<{ id: string; label: strin
       { id: 'e10', source: 'confirm', target: 'end', label: '' },
     ],
   },
+  flow_field_visit: {
+    nodes: [
+      { id: 'greeting',       label: 'Greeting',        type: 'start',    description: 'Introduce call purpose',              x: 250, y: 0   },
+      { id: 'visit_check',    label: 'Visit Check',     type: 'decision', description: 'Did employee make a field visit?',    x: 250, y: 140 },
+      { id: 'visit_no_end',   label: 'No Visit',        type: 'end',      description: 'Customer says no visit was made',     x: 0,   y: 290 },
+      { id: 'payment_check',  label: 'Payment Check',   type: 'decision', description: 'Was payment made during/after visit?',x: 500, y: 290 },
+      { id: 'payment_no_end', label: 'No Payment',      type: 'end',      description: 'Customer confirms no payment made',   x: 300, y: 440 },
+      { id: 'payment_amount', label: 'Payment Amount',  type: 'action',   description: 'Capture how much was paid',           x: 700, y: 440 },
+      { id: 'end',            label: 'Close Call',      type: 'end',      description: 'Confirm payment and close',           x: 700, y: 590 },
+    ],
+    edges: [
+      { id: 'e1', source: 'greeting',      target: 'visit_check',    label: '' },
+      { id: 'e2', source: 'visit_check',   target: 'visit_no_end',   label: 'No' },
+      { id: 'e3', source: 'visit_check',   target: 'payment_check',  label: 'Yes' },
+      { id: 'e4', source: 'payment_check', target: 'payment_no_end', label: 'No' },
+      { id: 'e5', source: 'payment_check', target: 'payment_amount', label: 'Yes' },
+      { id: 'e6', source: 'payment_amount',target: 'end',            label: '' },
+    ],
+  },
   flow_advanced: {
     nodes: [
       { id: 'start', label: 'Intro', type: 'start', description: 'Greet & identify', x: 180, y: 0 },
@@ -198,7 +217,24 @@ export default function FlowVisualizer({ flowId, currentNodeId }: FlowVisualizer
 
   const buildGraph = useCallback(
     (fId: string, activeNodeId?: string) => {
-      const def = FLOW_DEFINITIONS[fId] || FLOW_DEFINITIONS.flow_basic;
+      // Check localStorage for custom flows if not a built-in
+      let def = FLOW_DEFINITIONS[fId as keyof typeof FLOW_DEFINITIONS];
+      if (!def) {
+        try {
+          const raw = localStorage.getItem('sarvam_custom_flows');
+          if (raw) {
+            const custom = JSON.parse(raw) as Array<{ id: string; nodes: Array<{ id: string; label: string; type: string; description: string; position: { x: number; y: number } }>; edges: Array<{ id: string; source: string; target: string; label: string }> }>;
+            const match = custom.find(f => f.id === fId);
+            if (match) {
+              def = {
+                nodes: match.nodes.map(n => ({ ...n, type: n.type as 'start' | 'action' | 'decision' | 'dtmf' | 'end', x: n.position?.x ?? 0, y: n.position?.y ?? 0 })),
+                edges: match.edges,
+              };
+            }
+          }
+        } catch {}
+      }
+      if (!def) def = FLOW_DEFINITIONS.flow_basic;
 
       const rfNodes: Node[] = def.nodes.map((n) => ({
         id: n.id,
@@ -274,7 +310,12 @@ export default function FlowVisualizer({ flowId, currentNodeId }: FlowVisualizer
       <div className="absolute top-3 left-3 bg-[#1a1d24]/90 border border-[#2a2d38] rounded-lg px-3 py-1.5 backdrop-blur-sm">
         <div className="text-[10px] text-[#475569] uppercase tracking-widest">Active Flow</div>
         <div className="text-xs font-semibold text-[#f1f5f9]">
-          {flowId === 'flow_basic' ? 'Basic (Tier 1)' : flowId === 'flow_standard' ? 'Standard (Tier 2)' : 'Advanced (Tier 3)'}
+          {{
+            flow_basic:       'Basic (Tier 1)',
+            flow_standard:    'Standard (Tier 2)',
+            flow_advanced:    'Advanced (Tier 3)',
+            flow_field_visit: 'Field Visit',
+          }[flowId] ?? flowId.replace(/^flow_/, '').replace(/_/g, ' ')}
         </div>
       </div>
 

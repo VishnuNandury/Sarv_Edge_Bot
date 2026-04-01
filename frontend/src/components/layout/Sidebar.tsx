@@ -11,12 +11,14 @@ import {
   BarChart3,
   Settings,
   Phone,
+  Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/voice-agent', label: 'Voice Agent', icon: Mic },
+  { href: '/agent-flows', label: 'Agent Flows', icon: Network },
   { href: '/conversations', label: 'Conversations', icon: MessageSquare },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },

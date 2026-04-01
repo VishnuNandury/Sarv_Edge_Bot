@@ -563,4 +563,104 @@ FLOWS: Dict[str, Dict[str, Any]] = {
             {"id": "e17", "source": "escalation", "target": "farewell", "label": "Escalated", "type": "llm"},
         ],
     },
+    "flow_field_visit": {
+        "id": "flow_field_visit",
+        "name": "Field Visit",
+        "description": "Verify field agent visit and payment collection",
+        "tier": "tier_0",
+        "nodes": [
+            {
+                "id": "greeting",
+                "label": "Greeting",
+                "type": "start",
+                "description": "Introduce call purpose",
+                "system_prompt_snippet": (
+                    "Greet the customer warmly. Say: 'Hello {customer_name}ji, this is an automated "
+                    "call to confirm a recent visit related to your account. I hope you are doing well.'"
+                ),
+                "position": {"x": 250, "y": 0},
+            },
+            {
+                "id": "visit_check",
+                "label": "Visit Check",
+                "type": "decision",
+                "description": "Did employee make a field visit?",
+                "system_prompt_snippet": (
+                    "Ask: 'Did {employee_name} make a field visit to you recently? Please say Yes or No.' "
+                    "If customer says Yes, proceed to payment_check. "
+                    "If customer says No, proceed to visit_no_end."
+                ),
+                "position": {"x": 250, "y": 140},
+            },
+            {
+                "id": "visit_no_end",
+                "label": "No Visit",
+                "type": "end",
+                "description": "Customer confirms no visit was made",
+                "system_prompt_snippet": (
+                    "The customer said no visit was made. Say: 'Thank you for confirming. "
+                    "We will update our records accordingly. If you have any queries please contact us. "
+                    "Have a good day. Goodbye.' Then end the call."
+                ),
+                "position": {"x": 0, "y": 290},
+            },
+            {
+                "id": "payment_check",
+                "label": "Payment Check",
+                "type": "decision",
+                "description": "Was payment made during/after the visit?",
+                "system_prompt_snippet": (
+                    "The customer confirmed the visit. Ask: 'Thank you. Did you make any payment "
+                    "during or after the visit? Please say Yes or No.'"
+                    "If Yes, proceed to payment_amount. If No, proceed to payment_no_end."
+                ),
+                "position": {"x": 500, "y": 290},
+            },
+            {
+                "id": "payment_no_end",
+                "label": "No Payment",
+                "type": "end",
+                "description": "Customer confirms no payment was made",
+                "system_prompt_snippet": (
+                    "The customer said no payment was made during the visit. Say: "
+                    "'Thank you for the information. We have updated our records. "
+                    "If you have any queries please contact us. Have a good day. Goodbye.' "
+                    "Then end the call."
+                ),
+                "position": {"x": 300, "y": 440},
+            },
+            {
+                "id": "payment_amount",
+                "label": "Payment Amount",
+                "type": "action",
+                "description": "Capture how much was paid",
+                "system_prompt_snippet": (
+                    "The customer made a payment. Ask: 'Thank you. How much payment did you make? "
+                    "Please tell me the exact amount.' Listen carefully and record the amount "
+                    "as payment_amount in the context. Repeat the amount back to confirm."
+                ),
+                "position": {"x": 700, "y": 440},
+            },
+            {
+                "id": "end",
+                "label": "Close Call",
+                "type": "end",
+                "description": "Confirm payment and close",
+                "system_prompt_snippet": (
+                    "Payment amount has been captured. Say: 'Thank you for confirming the payment. "
+                    "We have recorded it and our team will verify and update your account within 24 hours. "
+                    "Have a good day. Goodbye.' Then end the call."
+                ),
+                "position": {"x": 700, "y": 590},
+            },
+        ],
+        "edges": [
+            {"id": "e1", "source": "greeting", "target": "visit_check", "label": "Proceed", "type": "llm"},
+            {"id": "e2", "source": "visit_check", "target": "visit_no_end", "label": "No visit", "type": "llm"},
+            {"id": "e3", "source": "visit_check", "target": "payment_check", "label": "Visit done", "type": "llm"},
+            {"id": "e4", "source": "payment_check", "target": "payment_no_end", "label": "No payment", "type": "llm"},
+            {"id": "e5", "source": "payment_check", "target": "payment_amount", "label": "Payment made", "type": "llm"},
+            {"id": "e6", "source": "payment_amount", "target": "end", "label": "Amount captured", "type": "llm"},
+        ],
+    },
 }

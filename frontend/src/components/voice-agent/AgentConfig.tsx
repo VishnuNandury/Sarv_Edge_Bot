@@ -1,20 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot } from 'lucide-react';
 import type { AgentConfig } from '@/lib/types';
 
 interface AgentConfigProps {
   onStart: (config: AgentConfig) => void;
+  onFlowChange?: (flowId: string) => void;
   isConnected: boolean;
   isConnecting: boolean;
 }
 
-const FLOWS = [
+const BUILT_IN_FLOWS = [
   { id: 'flow_basic', name: 'Basic', description: 'Tier 1 — Simple reminder call' },
   { id: 'flow_standard', name: 'Standard', description: 'Tier 2 — Negotiation flow' },
   { id: 'flow_advanced', name: 'Advanced', description: 'Tier 3 — Full escalation' },
-] as const;
+  { id: 'flow_field_visit', name: 'Field Visit', description: 'Verify agent visit & payment' },
+];
 
 const LANGUAGES = [
   { code: 'hi-IN', label: 'Hindi' },
@@ -26,7 +28,19 @@ const LANGUAGES = [
   { code: 'bn-IN', label: 'Bengali' },
 ];
 
-export default function AgentConfig({ onStart, isConnected, isConnecting }: AgentConfigProps) {
+export default function AgentConfig({ onStart, onFlowChange, isConnected, isConnecting }: AgentConfigProps) {
+  const [customFlows, setCustomFlows] = useState<Array<{ id: string; name: string; description: string }>>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('sarvam_custom_flows');
+      if (raw) {
+        const flows = JSON.parse(raw) as Array<{ id: string; name: string; description: string }>;
+        setCustomFlows(flows.map(f => ({ id: f.id, name: f.name, description: f.description })));
+      }
+    } catch {}
+  }, []);
+
   const [config, setConfig] = useState<AgentConfig>({
     customerName: 'Rajesh Kumar',
     customerId: '',
@@ -154,10 +168,10 @@ export default function AgentConfig({ onStart, isConnected, isConnecting }: Agen
           <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest">Flow Selection</p>
 
           <div className="space-y-2">
-            {FLOWS.map((flow) => (
+            {[...BUILT_IN_FLOWS, ...customFlows].map((flow) => (
               <button
                 key={flow.id}
-                onClick={() => set('flowId', flow.id)}
+                onClick={() => { set('flowId', flow.id); onFlowChange?.(flow.id); }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all ${
                   config.flowId === flow.id
                     ? 'border-indigo-500/50 bg-indigo-600/10 text-[#f1f5f9]'
