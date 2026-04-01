@@ -256,11 +256,12 @@ class SarvamPipecatPipeline:
             })
 
             # Greeting — speaks immediately via TTS pipeline
+            # Written in Devanagari so bulbul:v3 pronounces Hindi correctly.
             name = self.customer_context.get("name", "")
             greeting = (
-                f"Namaste {name}ji. Main Priya bol rahi hoon, aapke loan "
-                f"account ke baare mein baat karni thi. Kya aap abhi baat "
-                f"kar sakte hain?"
+                f"नमस्ते {name}जी। मैं प्रिया बोल रही हूँ, "
+                f"आपके loan account के बारे में बात करनी थी। "
+                f"क्या आप अभी बात कर सकते हैं?"
             )
             await self._task.queue_frames([TTSSpeakFrame(greeting)])
             await self._save_transcript("agent", greeting)
@@ -281,7 +282,8 @@ class SarvamPipecatPipeline:
                     "role": "system",
                     "content": (
                         "The customer has been silent for 10 seconds. "
-                        "In Hindi, politely ask if they can hear you and are still there."
+                        "Politely ask in Hindi — write all Hindi words in Devanagari script — "
+                        "if they can hear you and are still there."
                     ),
                 }
                 await aggregator.push_frame(LLMMessagesAppendFrame([msg], run_llm=True))
@@ -290,7 +292,7 @@ class SarvamPipecatPipeline:
                     "role": "system",
                     "content": (
                         "The customer is still not responding. "
-                        "In Hindi, say you will call back later and say goodbye."
+                        "In Hindi (Devanagari script), say you will call back later and say goodbye."
                     ),
                 }
                 await aggregator.push_frame(LLMMessagesAppendFrame([msg], run_llm=True))
