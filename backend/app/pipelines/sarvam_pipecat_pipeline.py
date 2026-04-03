@@ -77,6 +77,7 @@ class SarvamPipecatPipeline:
         db_session: Any,
         ws_emit: Callable,
         agent_config: Optional[Dict[str, Any]] = None,
+        voice_id: str = "priya",
     ):
         self.session_id = session_id
         self.customer_id = customer_id
@@ -85,6 +86,7 @@ class SarvamPipecatPipeline:
         self.db = db_session
         self.ws_emit = ws_emit
         self.agent_config = agent_config or {}
+        self.voice_id = voice_id
         self._has_db_record: bool = bool(customer_id)
 
         self.is_running = False
@@ -186,7 +188,7 @@ class SarvamPipecatPipeline:
         # ── TTS ───────────────────────────────────────────────────────────
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
-            voice_id="priya",   # bulbul:v3 voices (from API): priya, neha, pooja, simran, kavya, ritu... (f) / rahul, rohan, amit, dev... (m)
+            voice_id=self.voice_id,  # Selected by user; bulbul:v3 female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
             model="bulbul:v3",
             params=SarvamTTSService.InputParams(
                 language=pipecat_lang,  # Critical: set correct language so Hindi text is pronounced in Hindi, not English
@@ -258,8 +260,10 @@ class SarvamPipecatPipeline:
             # Greeting — speaks immediately via TTS pipeline
             # Written in Devanagari so bulbul:v3 pronounces Hindi correctly.
             name = self.customer_context.get("name", "")
+            # Use the selected voice name as the agent's self-introduction.
+            voice_name = self.voice_id.capitalize()
             greeting = (
-                f"नमस्ते {name}जी। मैं प्रिया बोल रही हूँ, "
+                f"नमस्ते {name}जी। मैं {voice_name} बोल रही हूँ, "
                 f"आपके loan account के बारे में बात करनी थी। "
                 f"क्या आप अभी बात कर सकते हैं?"
             )

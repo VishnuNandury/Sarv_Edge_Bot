@@ -68,28 +68,28 @@ function BuilderNode({ data, selected }: NodeProps<NodeData>) {
     <div style={{
       background: colors.bg,
       borderColor: selected ? '#6366f1' : colors.border,
-      borderWidth: 2, borderStyle: 'solid', borderRadius: 12,
-      padding: '10px 14px', minWidth: 150, maxWidth: 200, cursor: 'pointer',
+      borderWidth: 2, borderStyle: 'solid', borderRadius: 10,
+      padding: '7px 10px', minWidth: 130, maxWidth: 180, cursor: 'pointer',
       boxShadow: selected
-        ? '0 0 0 2px #6366f1, 0 0 20px rgba(99,102,241,0.25)'
-        : `0 0 8px ${colors.border}25`,
+        ? '0 0 0 2px #6366f1, 0 0 16px rgba(99,102,241,0.25)'
+        : `0 0 6px ${colors.border}25`,
     }}>
       <Handle type="target" position={Position.Top}
-        style={{ background: colors.border, border: 'none', width: 8, height: 8 }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        style={{ background: colors.border, border: 'none', width: 6, height: 6 }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{
-          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+          width: 20, height: 20, borderRadius: 6, flexShrink: 0,
           background: `${colors.icon}20`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Icon size={13} color={colors.icon} />
+          <Icon size={10} color={colors.icon} />
         </div>
         <div style={{ minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {data.label}
           </div>
           {data.description && (
-            <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2, lineHeight: 1.3,
+            <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 1, lineHeight: 1.3,
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {data.description}
             </div>
@@ -97,7 +97,7 @@ function BuilderNode({ data, selected }: NodeProps<NodeData>) {
         </div>
       </div>
       <Handle type="source" position={Position.Bottom}
-        style={{ background: colors.border, border: 'none', width: 8, height: 8 }} />
+        style={{ background: colors.border, border: 'none', width: 6, height: 6 }} />
     </div>
   );
 }
@@ -477,25 +477,25 @@ function FlowBuilderCanvas() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         {/* Left: Toolbox + Saved Flows */}
-        <div style={{ width: 210, flexShrink: 0, borderRight: '1px solid #2a2d38', background: '#111318', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ width: 188, flexShrink: 0, borderRight: '1px solid #2a2d38', background: '#111318', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Node Toolbox */}
-          <div style={{ padding: '12px 10px 8px' }}>
-            <div style={{ fontSize: 9, fontWeight: 600, color: '#475569', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Node Types</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div style={{ padding: '10px 8px 6px' }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: '#475569', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Node Types</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {TOOLBOX_NODES.map(({ type, label, desc }) => {
                 const c = NODE_COLORS[type];
                 const Icon = NODE_ICONS[type];
                 return (
                   <div key={type} draggable
                     onDragStart={e => { e.dataTransfer.setData('application/reactflow', type); e.dataTransfer.effectAllowed = 'move'; }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8,
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 7,
                       border: `1px solid ${c.border}40`, background: c.bg, cursor: 'grab', userSelect: 'none' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: 6, background: `${c.icon}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={12} color={c.icon} />
+                    <div style={{ width: 20, height: 20, borderRadius: 5, background: `${c.icon}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={10} color={c.icon} />
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#f1f5f9' }}>{label}</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#f1f5f9' }}>{label}</div>
                       <div style={{ fontSize: 9, color: '#475569' }}>{desc}</div>
                     </div>
                   </div>

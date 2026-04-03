@@ -30,6 +30,7 @@ export default function VoiceAgentPage() {
     flowId: 'flow_basic',
     agentType: 'sarvam',
     language: 'hi-IN',
+    voice: 'priya',
   });
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);

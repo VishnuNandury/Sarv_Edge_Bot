@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot } from 'lucide-react';
+import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot, Mic } from 'lucide-react';
 import type { AgentConfig } from '@/lib/types';
 
 interface AgentConfigProps {
@@ -16,6 +16,19 @@ const BUILT_IN_FLOWS = [
   { id: 'flow_standard', name: 'Standard', description: 'Tier 2 — Negotiation flow' },
   { id: 'flow_advanced', name: 'Advanced', description: 'Tier 3 — Full escalation' },
   { id: 'flow_field_visit', name: 'Field Visit', description: 'Verify agent visit & payment' },
+];
+
+const BULBUL_V3_VOICES = [
+  { id: 'priya',  label: 'Priya',  gender: 'F' },
+  { id: 'neha',   label: 'Neha',   gender: 'F' },
+  { id: 'pooja',  label: 'Pooja',  gender: 'F' },
+  { id: 'simran', label: 'Simran', gender: 'F' },
+  { id: 'kavya',  label: 'Kavya',  gender: 'F' },
+  { id: 'ritu',   label: 'Ritu',   gender: 'F' },
+  { id: 'rahul',  label: 'Rahul',  gender: 'M' },
+  { id: 'rohan',  label: 'Rohan',  gender: 'M' },
+  { id: 'amit',   label: 'Amit',   gender: 'M' },
+  { id: 'dev',    label: 'Dev',    gender: 'M' },
 ];
 
 const LANGUAGES = [
@@ -51,6 +64,7 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
     flowId: 'flow_basic',
     agentType: 'sarvam',
     language: 'hi-IN',
+    voice: 'priya',
   });
 
   const set = (key: keyof AgentConfig, value: unknown) =>
@@ -234,6 +248,31 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
             ))}
           </select>
         </div>
+
+        {/* Voice — only for Sarvam (bulbul:v3) */}
+        {config.agentType === 'sarvam' && (
+          <div>
+            <label className={labelClass}>
+              <Mic size={11} className="inline mr-1 text-[#475569]" />
+              Voice (bulbul:v3)
+            </label>
+            <select
+              className={inputClass}
+              value={config.voice}
+              onChange={(e) => set('voice', e.target.value)}
+            >
+              {['F', 'M'].map((gender) => (
+                <optgroup key={gender} label={gender === 'F' ? '— Female —' : '— Male —'} className="bg-[#1a1d24]">
+                  {BULBUL_V3_VOICES.filter(v => v.gender === gender).map((v) => (
+                    <option key={v.id} value={v.id} className="bg-[#1a1d24]">
+                      {v.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Start Button */}

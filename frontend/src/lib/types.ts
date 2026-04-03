@@ -156,6 +156,7 @@ export interface AgentConfig {
   flowId: string;
   agentType: 'sarvam' | 'whisper_edge';
   language: string;
+  voice: string;
 }
 
 export interface DashboardStats {

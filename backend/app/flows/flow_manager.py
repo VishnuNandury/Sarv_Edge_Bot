@@ -181,16 +181,24 @@ class FlowManager:
         return result
 
     def _get_transition_hints(self) -> str:
-        """Generate hints about possible transitions from current node."""
+        """
+        For decision nodes (multiple outgoing edges), embed the ACTUAL instructions
+        for each branch so the LLM knows exactly what to say for each customer response.
+        Single-edge nodes get no hint — the agent just progresses naturally.
+        """
         outgoing = self.get_outgoing_edges(self.current_node_id)
         if not outgoing:
             return "## This is the final step. Wrap up the call gracefully."
 
-        hints = "## Possible Transitions:\n"
+        if len(outgoing) == 1:
+            return ""  # Single path — no branching decision needed
+
+        hints = "## IMPORTANT — How to respond based on the customer's answer:\n"
         for edge in outgoing:
             target = self.nodes.get(edge.target)
             if target:
-                hints += f"- If '{edge.label}': proceed to '{target.label}'\n"
+                target_instruction = self._interpolate(target.system_prompt_snippet)
+                hints += f"- If customer indicates '{edge.label}': {target_instruction}\n"
         return hints
 
     def transition_to(self, node_id: str) -> bool:

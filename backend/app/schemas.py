@@ -233,6 +233,7 @@ class VoiceSessionCreate(BaseModel):
     dpd: Optional[int] = None
     due_date: Optional[str] = Field(default=None, alias="dueDate")
     language: Optional[str] = Field(default="hi-IN", alias="language")
+    voice_id: Optional[str] = Field(default="priya", alias="voice")
 
 
 class VoiceSessionResponse(BaseModel):
