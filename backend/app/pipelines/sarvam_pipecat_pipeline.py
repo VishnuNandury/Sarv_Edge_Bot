@@ -189,12 +189,13 @@ class SarvamPipecatPipeline:
         )
 
         # ── TTS ───────────────────────────────────────────────────────────
+        # pipecat 0.0.108+: use Settings API (voice_id/model/params deprecated)
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
-            voice_id=self.voice_id,  # Selected by user; bulbul:v3 female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
-            model="bulbul:v3",
-            params=SarvamTTSService.InputParams(
-                language=pipecat_lang,  # Critical: set correct language so Hindi text is pronounced in Hindi, not English
+            settings=SarvamTTSService.Settings(
+                model="bulbul:v3",
+                voice=self.voice_id,   # Selected by user; female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
+                language=pipecat_lang, # Critical: set correct language so Hindi text is pronounced in Hindi, not English
             ),
         )
 
@@ -203,6 +204,15 @@ class SarvamPipecatPipeline:
         context = LLMContext(
             messages=[{"role": "system", "content": system_prompt}]
         )
+
+        def _update_system_prompt(new_prompt: str) -> None:
+            """Update only the system message; preserve conversation history."""
+            msgs = context.messages
+            if msgs and msgs[0].get("role") == "system":
+                msgs[0]["content"] = new_prompt
+            else:
+                context.set_messages([{"role": "system", "content": new_prompt}] + list(msgs))
+
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
             context,
             user_params=LLMUserAggregatorParams(
@@ -237,8 +247,7 @@ class SarvamPipecatPipeline:
         self._task = PipelineTask(
             pipeline,
             params=PipelineParams(
-                allow_interruptions=False,        # Loan collection: don't let VAD cut off agent mid-sentence
-                audio_out_sample_rate=24000,      # Match bulbul:v3 native output rate
+                allow_interruptions=False,  # Loan collection: don't let VAD cut off agent mid-sentence
                 enable_metrics=True,
                 enable_usage_metrics=True,
                 observers=[MetricsLogObserver(), turn_observer],
@@ -277,7 +286,7 @@ class SarvamPipecatPipeline:
             # Advance the flow past the greeting node now so the LLM context
             # is already on the next step when the customer first responds.
             self.flow_manager.process_single_edge_transition()
-            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
+            _update_system_prompt(self.flow_manager.get_system_prompt())
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(transport, client):
@@ -329,7 +338,7 @@ class SarvamPipecatPipeline:
             # other intents from the customer's utterance and transition.
             self.flow_manager.process_customer_response(text)
             # Always refresh the system prompt so the LLM sees the current node.
-            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
+            _update_system_prompt(self.flow_manager.get_system_prompt())
 
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
         async def on_assistant_turn_stopped(aggregator, message):
@@ -340,7 +349,7 @@ class SarvamPipecatPipeline:
             # For action nodes (single outgoing edge): auto-advance after agent
             # speaks — no customer keyword needed to trigger the transition.
             self.flow_manager.process_single_edge_transition()
-            context.set_messages([{"role": "system", "content": self.flow_manager.get_system_prompt()}])
+            _update_system_prompt(self.flow_manager.get_system_prompt())
 
         # ── Start pipeline in background ──────────────────────────────────
         loop = asyncio.get_event_loop()
