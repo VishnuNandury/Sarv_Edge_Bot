@@ -4,7 +4,7 @@ SarvamPipecatPipeline: Pipecat-based voice pipeline for loan collection agent.
 Architecture:
 - Transport:  Pipecat SmallWebRTC  (aiortc under the hood)
 - STT:        Sarvam saarika:v2.5  (WebSocket streaming, built-in VAD)
-- LLM:        Groq llama-3.3-70b   (OpenAI-compatible)
+- LLM:        Sarvam sarvam-30b    (native Sarvam multilingual, Hinglish-optimised)
 - TTS:        Sarvam bulbul:v3     (WebSocket, natural Hindi voices)
 
 Pipecat features used:
@@ -182,7 +182,7 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                max_tokens=350,  # 200 caused truncation mid-sentence → broken voice
+                max_tokens=600,  # sarvam-30b Devanagari tokens are dense; 600 ≈ 40-50 Hindi words
                 top_p=0.9,
             ),
         )
@@ -283,14 +283,11 @@ class SarvamPipecatPipeline:
             #
             # WHY THE WAIT:
             # on_client_connected fires ~0.4s after the pipeline task starts,
-            # but StartFrame takes ~2s to propagate through all services
-            # (STT+TTS WebSocket connections). Pushing frames before the
-            # aggregator receives StartFrame raises an error and drops the
-            # frame. Poll until _started is set (max 10s).
-            waited = 0
-            while not getattr(user_aggregator, "_started", False) and waited < 100:
-                await asyncio.sleep(0.1)
-                waited += 1
+            # but StartFrame takes ~1.5–2s to propagate through STT+TTS
+            # WebSocket connections. The flag is stored as __started
+            # (name-mangled, inaccessible), so we wait a fixed 2.5s which
+            # covers the typical ~1.5s startup with a comfortable margin.
+            await asyncio.sleep(2.5)
 
             await user_aggregator.push_frame(
                 LLMMessagesAppendFrame(
@@ -341,7 +338,7 @@ class SarvamPipecatPipeline:
         async def on_user_turn_stopped(aggregator, strategy, message):
             self.turn_index += 1
             text = getattr(message, "content", str(message))
-            logger.info(f"[SarvamPipecat:{self.session_id}] Customer: {text[:80]}")
+            logger.info(f"[SarvamPipecat:{self.session_id}] Customer: {text}")
             await self._save_transcript("customer", text)
             await self._emit_transcript("customer", text, 0)
 
@@ -358,7 +355,7 @@ class SarvamPipecatPipeline:
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
         async def on_assistant_turn_stopped(aggregator, message):
             text = getattr(message, "content", str(message))
-            logger.info(f"[SarvamPipecat:{self.session_id}] Agent: {text[:80]}")
+            logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
             # System prompt update only — flow advances in on_user_turn_stopped
