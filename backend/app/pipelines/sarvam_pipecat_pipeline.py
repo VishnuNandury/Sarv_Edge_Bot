@@ -116,7 +116,7 @@ class SarvamPipecatPipeline:
             from pipecat.pipeline.task import PipelineTask, PipelineParams, PipelineTaskParams
             from pipecat.services.sarvam.stt import SarvamSTTService, SarvamSTTSettings
             from pipecat.services.sarvam.tts import SarvamTTSService
-            from pipecat.services.groq.llm import GroqLLMService, GroqLLMSettings
+            from pipecat.services.sarvam.llm import SarvamLLMService, SarvamLLMSettings
             from pipecat.processors.aggregators.llm_response_universal import (
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
@@ -175,12 +175,15 @@ class SarvamPipecatPipeline:
         )
 
         # ── LLM ───────────────────────────────────────────────────────────
-        llm = GroqLLMService(
-            api_key=settings.GROQ_API_KEY,
-            settings=GroqLLMSettings(
-                model=settings.DEFAULT_LLM_MODEL,
+        # SarvamLLMService (pipecat 0.0.108+): native Sarvam LLM integration.
+        # sarvam-30b is their flagship multilingual model — natively understands
+        # Hindi/Devanagari for far more natural loan collection conversations.
+        llm = SarvamLLMService(
+            api_key=settings.SARVAM_API_KEY,
+            settings=SarvamLLMSettings(
+                model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                max_tokens=150,
+                max_tokens=200,
                 top_p=0.9,
             ),
         )

@@ -27,7 +27,10 @@
       "Bash(find C:UsersvishnAppDataRoamingPythonPython313site-packagespipecat -type f -name *.py -exec grep -l smart {})",
       "Bash(2)",
       "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pip index:*)",
+      "Bash(pip install:*)",
+      "Bash(pip download:*)"
     ]
   }
 }

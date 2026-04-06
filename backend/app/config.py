@@ -34,8 +34,12 @@ class Settings(BaseSettings):
     # Groq API base
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
+    # Sarvam LLM (pipecat 0.0.108+ SarvamLLMService — same API key as STT/TTS)
+    SARVAM_LLM_BASE_URL: str = "https://api.sarvam.ai/v1"
+    SARVAM_LLM_MODEL: str = os.getenv("SARVAM_LLM_MODEL", "sarvam-30b")
+
     # Defaults
-    DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
+    DEFAULT_LLM_MODEL: str = "sarvam-30b"
     DEFAULT_LANGUAGE: str = "hindi"
 
     class Config:
