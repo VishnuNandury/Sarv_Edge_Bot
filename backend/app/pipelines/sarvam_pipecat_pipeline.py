@@ -280,6 +280,18 @@ class SarvamPipecatPipeline:
             # Using LLMMessagesAppendFrame routes through the normal
             # LLM → TTS path, so pause_frame_processing is managed
             # correctly by the LLM response lifecycle.
+            #
+            # WHY THE WAIT:
+            # on_client_connected fires ~0.4s after the pipeline task starts,
+            # but StartFrame takes ~2s to propagate through all services
+            # (STT+TTS WebSocket connections). Pushing frames before the
+            # aggregator receives StartFrame raises an error and drops the
+            # frame. Poll until _started is set (max 10s).
+            waited = 0
+            while not getattr(user_aggregator, "_started", False) and waited < 100:
+                await asyncio.sleep(0.1)
+                waited += 1
+
             await user_aggregator.push_frame(
                 LLMMessagesAppendFrame(
                     messages=[{"role": "user", "content": "[call connected]"}],
