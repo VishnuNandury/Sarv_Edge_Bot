@@ -125,7 +125,6 @@ class SarvamPipecatPipeline:
             from pipecat.transcriptions.language import Language
             from pipecat.transports.base_transport import TransportParams
             from pipecat.frames.frames import (
-                TTSSpeakFrame,
                 EndFrame,
                 LLMMessagesAppendFrame,
             )
@@ -183,7 +182,7 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                max_tokens=200,
+                max_tokens=350,  # 200 caused truncation mid-sentence → broken voice
                 top_p=0.9,
             ),
         )
@@ -247,7 +246,7 @@ class SarvamPipecatPipeline:
         self._task = PipelineTask(
             pipeline,
             params=PipelineParams(
-                allow_interruptions=False,  # Loan collection: don't let VAD cut off agent mid-sentence
+                # allow_interruptions deprecated in 0.0.99 — use user_turn_strategies instead
                 enable_metrics=True,
                 enable_usage_metrics=True,
                 observers=[MetricsLogObserver(), turn_observer],
@@ -269,24 +268,24 @@ class SarvamPipecatPipeline:
                 "current_node": self.flow_manager.current_node.to_dict(),
             })
 
-            # Greeting — speaks immediately via TTS pipeline
-            # Written in Devanagari so bulbul:v3 pronounces Hindi correctly.
-            name = self.customer_context.get("name", "")
-            # Use the selected voice name as the agent's self-introduction.
-            voice_name = self.voice_id.capitalize()
-            greeting = (
-                f"नमस्ते {name}जी। मैं {voice_name} बोल रही हूँ, "
-                f"आपके loan account के बारे में बात करनी थी। "
-                f"क्या आप अभी बात कर सकते हैं?"
+            # Trigger the LLM to generate the opening greeting.
+            #
+            # WHY NOT TTSSpeakFrame:
+            # SarvamTTSService uses pause_frame_processing=True. When a
+            # TTSSpeakFrame is interrupted (customer speaks while greeting
+            # plays), BotStoppedSpeakingFrame is never received, so frame
+            # processing stays permanently paused and every subsequent LLM
+            # response is silently dropped — the agent never speaks again.
+            #
+            # Using LLMMessagesAppendFrame routes through the normal
+            # LLM → TTS path, so pause_frame_processing is managed
+            # correctly by the LLM response lifecycle.
+            await user_aggregator.push_frame(
+                LLMMessagesAppendFrame(
+                    messages=[{"role": "user", "content": "[call connected]"}],
+                    run_llm=True,
+                )
             )
-            await self._task.queue_frames([TTSSpeakFrame(greeting)])
-            await self._save_transcript("agent", greeting)
-            await self._emit_transcript("agent", greeting, 0)
-            # The greeting bypasses the LLM (TTSSpeakFrame goes direct to TTS).
-            # Advance the flow past the greeting node now so the LLM context
-            # is already on the next step when the customer first responds.
-            self.flow_manager.process_single_edge_transition()
-            _update_system_prompt(self.flow_manager.get_system_prompt())
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(transport, client):
@@ -336,7 +335,11 @@ class SarvamPipecatPipeline:
 
             # For decision nodes (multiple outgoing edges): detect yes/no and
             # other intents from the customer's utterance and transition.
-            self.flow_manager.process_customer_response(text)
+            transitioned = self.flow_manager.process_customer_response(text)
+            # For single-edge action nodes (e.g. capture payment amount): advance
+            # AFTER the customer has responded, not after the agent speaks.
+            if not transitioned:
+                self.flow_manager.process_single_edge_transition()
             # Always refresh the system prompt so the LLM sees the current node.
             _update_system_prompt(self.flow_manager.get_system_prompt())
 
@@ -346,9 +349,8 @@ class SarvamPipecatPipeline:
             logger.info(f"[SarvamPipecat:{self.session_id}] Agent: {text[:80]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
-            # For action nodes (single outgoing edge): auto-advance after agent
-            # speaks — no customer keyword needed to trigger the transition.
-            self.flow_manager.process_single_edge_transition()
+            # System prompt update only — flow advances in on_user_turn_stopped
+            # after the customer responds (avoids premature advance at action nodes).
             _update_system_prompt(self.flow_manager.get_system_prompt())
 
         # ── Start pipeline in background ──────────────────────────────────

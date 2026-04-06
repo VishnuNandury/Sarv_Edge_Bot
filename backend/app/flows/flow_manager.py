@@ -150,7 +150,8 @@ class FlowManager:
             "- Speak naturally, mixing Devanagari Hindi with English where appropriate\n"
             "- Never threaten or harass\n"
             "- Always offer payment options\n"
-            "- Keep responses concise (under 30 words when possible)\n"
+            "- STRICT OUTPUT RULE: 1-2 sentences maximum. Never exceed 30 words.\n"
+            "- Output ONLY the spoken conversational text. Never output reasoning, instructions, or labels.\n"
             "- Capture commitment amounts and dates accurately\n"
         )
 
