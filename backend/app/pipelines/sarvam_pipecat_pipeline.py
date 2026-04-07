@@ -182,7 +182,12 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                max_tokens=600,  # sarvam-30b Devanagari tokens are dense; 600 ≈ 40-50 Hindi words
+                # sarvam-30b is a reasoning model: thinking tokens count toward max_tokens.
+                # Without reasoning_effort="low", the model uses "medium"/"high" by default,
+                # consuming ~500 thinking tokens → only ~100 tokens left for the actual
+                # spoken response → output gets truncated mid-sentence, or nothing reaches TTS.
+                max_tokens=600,
+                reasoning_effort="low",  # minimise hidden thinking tokens; voice needs 1-2 sentences
                 top_p=0.9,
             ),
         )
