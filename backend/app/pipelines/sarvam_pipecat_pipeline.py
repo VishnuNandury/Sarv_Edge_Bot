@@ -4,7 +4,11 @@ SarvamPipecatPipeline: Pipecat-based voice pipeline for loan collection agent.
 Architecture:
 - Transport:  Pipecat SmallWebRTC  (aiortc under the hood)
 - STT:        Sarvam saarika:v2.5  (WebSocket streaming, built-in VAD)
-- LLM:        Sarvam sarvam-30b    (native Sarvam multilingual, Hinglish-optimised)
+- LLM:        Groq llama-3.3-70b-versatile  (non-reasoning, sub-500ms generation)
+              Falls back to OpenAI gpt-4o-mini if GROQ_API_KEY is unset.
+              sarvam-30b was removed: it is a reasoning model that consumes all
+              available max_tokens for thinking tokens, leaving nothing for the
+              spoken response → TTS receives empty text → silence.
 - TTS:        Sarvam bulbul:v3     (WebSocket, natural Hindi voices)
 
 Pipecat features used:
@@ -12,7 +16,6 @@ Pipecat features used:
 - Transcript save (on_user_turn_stopped / on_assistant_turn_stopped)
 - Metrics         (PipelineParams enable_metrics + MetricsLogObserver)
 - Turn tracking   (TurnTrackingObserver)
-- Voicemail       (VoicemailDetector)
 """
 import asyncio
 import logging
@@ -116,7 +119,9 @@ class SarvamPipecatPipeline:
             from pipecat.pipeline.task import PipelineTask, PipelineParams, PipelineTaskParams
             from pipecat.services.sarvam.stt import SarvamSTTService, SarvamSTTSettings
             from pipecat.services.sarvam.tts import SarvamTTSService
-            from pipecat.services.sarvam.llm import SarvamLLMService, SarvamLLMSettings
+            from pipecat.services.groq.llm import GroqLLMService
+            from pipecat.services.openai.llm import OpenAILLMService
+            from pipecat.services.openai.base_llm import OpenAILLMSettings
             from pipecat.processors.aggregators.llm_response_universal import (
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
@@ -175,23 +180,42 @@ class SarvamPipecatPipeline:
         )
 
         # ── LLM ───────────────────────────────────────────────────────────
-        # SarvamLLMService (pipecat 0.0.108+): native Sarvam LLM integration.
-        # sarvam-30b is their flagship multilingual model — natively understands
-        # Hindi/Devanagari for far more natural loan collection conversations.
-        llm = SarvamLLMService(
-            api_key=settings.SARVAM_API_KEY,
-            settings=SarvamLLMSettings(
-                model=settings.SARVAM_LLM_MODEL,
-                temperature=0.7,
-                # sarvam-30b minimum thinking budget is ~380-400 tokens regardless of
-                # prompt size. With max_tokens=400 the model exhausts all tokens on
-                # thinking → empty response → TTS never called → silence.
-                # 600 = ~400 thinking + ~150-200 actual response → fits comfortably.
-                max_tokens=600,
-                reasoning_effort="low",
-                top_p=0.9,
-            ),
-        )
+        # WHY Groq instead of sarvam-30b:
+        # sarvam-30b is a reasoning model. Its "thinking" phase consumes a
+        # minimum of ~600-700 tokens regardless of max_tokens or reasoning_effort
+        # setting. With max_tokens ≤ 600, ALL tokens go to thinking → the actual
+        # spoken response is empty → TTS receives nothing → silence. The only
+        # reliable fix is to use a non-reasoning model.
+        #
+        # Groq llama-3.3-70b-versatile:
+        # - Non-reasoning: TTFB < 500ms, no thinking token overhead
+        # - Excellent Hindi/Devanagari generation quality
+        # - OpenAI-compatible, drop-in replacement via pipecat GroqLLMService
+        # - Falls back to OpenAI gpt-4o-mini if GROQ_API_KEY is not set
+        _groq_key = settings.GROQ_API_KEY
+        _openai_key = settings.OPENAI_API_KEY
+        if _groq_key:
+            llm = GroqLLMService(
+                api_key=_groq_key,
+                settings=GroqLLMService.Settings(
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.7,
+                    max_tokens=300,   # short voice replies — no thinking overhead
+                    top_p=0.9,
+                ),
+            )
+            logger.info(f"[SarvamPipecat:{self.session_id}] LLM: Groq llama-3.3-70b-versatile")
+        else:
+            llm = OpenAILLMService(
+                api_key=_openai_key,
+                settings=OpenAILLMSettings(
+                    model="gpt-4o-mini",
+                    temperature=0.7,
+                    max_tokens=300,
+                    top_p=0.9,
+                ),
+            )
+            logger.info(f"[SarvamPipecat:{self.session_id}] LLM: OpenAI gpt-4o-mini (fallback)")
 
         # ── TTS ───────────────────────────────────────────────────────────
         # TextAggregationMode.SENTENCE (default): pipecat accumulates LLM tokens

@@ -32,7 +32,10 @@
       "Bash(pip install:*)",
       "Bash(pip download:*)",
       "Bash(sed -n '510,530p' /c/Users/vishn/AppData/Roaming/Python/Python313/site-packages/pipecat/processors/aggregators/llm_response_universal.py)",
-      "Bash(sed -n '630,650p' /c/Users/vishn/AppData/Roaming/Python/Python313/site-packages/pipecat/processors/aggregators/llm_response_universal.py)"
+      "Bash(sed -n '630,650p' /c/Users/vishn/AppData/Roaming/Python/Python313/site-packages/pipecat/processors/aggregators/llm_response_universal.py)",
+      "Read(//usr/local/lib/python3.11/site-packages/pipecat/services/**)",
+      "Read(//usr/local/lib/python3.11/site-packages/**)",
+      "Bash(python3 -c \"import pipecat; print\\(pipecat.__file__\\)\")"
     ]
   }
 }
