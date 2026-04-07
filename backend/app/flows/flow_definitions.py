@@ -581,8 +581,10 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "start",
                 "description": "Introduce call purpose",
                 "system_prompt_snippet": (
-                    "Greet the customer warmly. Say: 'Hello {customer_name}ji, this is an automated "
-                    "call to confirm a recent visit related to your account. I hope you are doing well.'"
+                    "ग्राहक को गर्मजोशी से नमस्कार करें, अपना परिचय दें और बताएं यह "
+                    "एक automated call है। उदाहरण: 'नमस्ते {customer_name}जी, मैं Company "
+                    "की तरफ से बोल रही हूँ। आपके account से जुड़ी एक recent visit के बारे में "
+                    "confirm करना था। आशा है आप ठीक हैं।'"
                 ),
                 "position": {"x": 250, "y": 0},
             },
@@ -592,9 +594,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "decision",
                 "description": "Did employee make a field visit?",
                 "system_prompt_snippet": (
-                    "Ask: 'Did {employee_name} make a field visit to you recently? Please say Yes or No.' "
-                    "If customer says Yes, proceed to payment_check. "
-                    "If customer says No, proceed to visit_no_end."
+                    "ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। "
+                    "उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? "
+                    "कृपया हाँ या नहीं में बताएं।'"
                 ),
                 "position": {"x": 250, "y": 140},
             },
@@ -604,9 +606,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "end",
                 "description": "Customer confirms no visit was made",
                 "system_prompt_snippet": (
-                    "The customer said no visit was made. Say: 'Thank you for confirming. "
-                    "We will update our records accordingly. If you have any queries please contact us. "
-                    "Have a good day. Goodbye.' Then end the call."
+                    "ग्राहक ने कहा कि कोई visit नहीं हुई। Records update होगा यह बताएं और call समाप्त करें। "
+                    "उदाहरण: 'ठीक है, जानकारी के लिए शुक्रिया। हम अपने records update कर देंगे। "
+                    "कोई query हो तो हमसे संपर्क करें। धन्यवाद, शुभ दिन।'"
                 ),
                 "position": {"x": 0, "y": 290},
             },
@@ -616,9 +618,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "decision",
                 "description": "Was payment made during/after the visit?",
                 "system_prompt_snippet": (
-                    "The customer confirmed the visit. Ask: 'Thank you. Did you make any payment "
-                    "during or after the visit? Please say Yes or No.'"
-                    "If Yes, proceed to payment_amount. If No, proceed to payment_no_end."
+                    "ग्राहक ने visit confirm की। अब पूछें कि क्या उस visit के दौरान या बाद में "
+                    "कोई payment हुई। उदाहरण: 'शुक्रिया। क्या आपने उस visit के दौरान या उसके बाद "
+                    "कोई payment की? कृपया हाँ या नहीं में बताएं।'"
                 ),
                 "position": {"x": 500, "y": 290},
             },
@@ -628,10 +630,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "end",
                 "description": "Customer confirms no payment was made",
                 "system_prompt_snippet": (
-                    "The customer said no payment was made during the visit. Say: "
-                    "'Thank you for the information. We have updated our records. "
-                    "If you have any queries please contact us. Have a good day. Goodbye.' "
-                    "Then end the call."
+                    "ग्राहक ने कोई payment नहीं की। यह note करें और call समाप्त करें। "
+                    "उदाहरण: 'समझ गए, यह जानकारी note कर ली। हमारी team जल्द आपसे संपर्क करेगी। "
+                    "धन्यवाद, शुभ दिन।'"
                 ),
                 "position": {"x": 300, "y": 440},
             },
@@ -641,9 +642,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "action",
                 "description": "Capture how much was paid",
                 "system_prompt_snippet": (
-                    "The customer made a payment. Ask: 'Thank you. How much payment did you make? "
-                    "Please tell me the exact amount.' Listen carefully and record the amount "
-                    "as payment_amount in the context. Repeat the amount back to confirm."
+                    "ग्राहक ने payment की है। exact amount पूछें और confirm करें। "
+                    "उदाहरण: 'शुक्रिया। आपने कितनी राशि का payment किया? "
+                    "कृपया exact amount बताएं।'"
                 ),
                 "position": {"x": 700, "y": 440},
             },
@@ -653,9 +654,9 @@ FLOWS: Dict[str, Dict[str, Any]] = {
                 "type": "end",
                 "description": "Confirm payment and close",
                 "system_prompt_snippet": (
-                    "Payment amount has been captured. Say: 'Thank you for confirming the payment. "
-                    "We have recorded it and our team will verify and update your account within 24 hours. "
-                    "Have a good day. Goodbye.' Then end the call."
+                    "Payment amount confirm हो गई। ग्राहक को बताएं कि team 24 घंटे में verify करेगी। "
+                    "उदाहरण: 'शुक्रिया, payment की जानकारी note कर ली। हमारी team 24 घंटे में "
+                    "verify करके आपका account update कर देगी। धन्यवाद, शुभ दिन।'"
                 ),
                 "position": {"x": 700, "y": 590},
             },

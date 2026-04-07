@@ -147,7 +147,9 @@ class FlowManager:
             "## Guidelines:\n"
             "- Always greet warmly and identify yourself\n"
             "- Be empathetic but professional\n"
-            "- Speak naturally, mixing Devanagari Hindi with English where appropriate\n"
+            "- OUTPUT LANGUAGE: Respond primarily in Hindi (Devanagari). "
+            "Use English ONLY for technical terms (loan, EMI, CIBIL, UTR, UPI, payment, account, receipt). "
+            "All other words — including greetings, questions, and transitions — MUST be in Devanagari Hindi.\n"
             "- Never threaten or harass\n"
             "- Always offer payment options\n"
             "- STRICT OUTPUT RULE: 1-2 sentences maximum. Never exceed 30 words.\n"
@@ -168,6 +170,7 @@ class FlowManager:
             "minimum_amount": str(int(float(ctx.get("outstanding_amount", 0)) * 0.2)),
             "settlement_amount": str(int(float(ctx.get("outstanding_amount", 0)) * 0.7)),
             "minimum_settlement": str(int(float(ctx.get("outstanding_amount", 0)) * 0.5)),
+            "employee_name": ctx.get("employee_name", "हमारे कर्मचारी"),
             "upi_id": ctx.get("upi_id", "company@upi"),
             "account_number": ctx.get("account_number", "XXXX"),
             "helpline_number": ctx.get("helpline_number", "1800-XXX-XXXX"),
