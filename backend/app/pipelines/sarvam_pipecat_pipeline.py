@@ -182,12 +182,13 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                # sarvam-30b is a reasoning model: thinking tokens count toward max_tokens.
-                # Without reasoning_effort="low", the model uses "medium"/"high" by default,
-                # consuming ~500 thinking tokens → only ~100 tokens left for the actual
-                # spoken response → output gets truncated mid-sentence, or nothing reaches TTS.
-                max_tokens=600,
-                reasoning_effort="low",  # minimise hidden thinking tokens; voice needs 1-2 sentences
+                # sarvam-30b is a reasoning model: thinking tokens count against max_tokens.
+                # Thinking budget scales with prompt complexity: at 600-700 prompt tokens
+                # the model consumes ~500 thinking tokens, leaving only ~60 for speech →
+                # truncated mid-sentence. Set max_tokens high enough to cover thinking (≤600)
+                # plus the actual spoken response (≤150 for 1-2 Devanagari sentences).
+                max_tokens=1500,
+                reasoning_effort="low",  # minimise thinking overhead; voice needs 1-2 sentences
                 top_p=0.9,
             ),
         )
@@ -220,7 +221,7 @@ class SarvamPipecatPipeline:
         user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
             context,
             user_params=LLMUserAggregatorParams(
-                user_idle_timeout=10.0,  # Detect customer silence after 10s
+                user_idle_timeout=20.0,  # 20s: give customer time to respond after agent speaks
             ),
         )
 
