@@ -130,6 +130,7 @@ class SarvamPipecatPipeline:
             )
             from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
             from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
+            from pipecat.services.tts_service import TextAggregationMode
         except ImportError as e:
             raise RuntimeError(
                 f"pipecat-ai not installed or incomplete: {e}. "
@@ -194,14 +195,32 @@ class SarvamPipecatPipeline:
         )
 
         # ── TTS ───────────────────────────────────────────────────────────
-        # pipecat 0.0.108+: use Settings API (voice_id/model/params deprecated)
+        # TextAggregationMode.TOKEN: stream LLM tokens directly to the TTS WebSocket
+        # as they arrive instead of waiting for sentence boundaries.
+        #
+        # WHY TOKEN MODE:
+        # SENTENCE mode (default) calls run_tts() once per detected sentence.
+        # Each call sends a separate JSON text message to Sarvam's WebSocket,
+        # causing Sarvam to start a fresh synthesis unit per sentence → prosodic
+        # reset between sentences → audible tone change + gap.
+        #
+        # TOKEN mode sends tokens to the same open WebSocket as they stream in.
+        # Sarvam buffers them server-side (min_buffer_size) and synthesises one
+        # continuous audio stream → no inter-sentence breaks, consistent voice.
+        #
+        # min_buffer_size=80: wait for ≥80 chars before Sarvam starts generating
+        # audio (prevents choppy output from single-token messages).
+        # max_chunk_length=400: larger Sarvam synthesis units → more natural prosody.
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
             settings=SarvamTTSService.Settings(
                 model="bulbul:v3",
-                voice=self.voice_id,   # Selected by user; female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
-                language=pipecat_lang, # Critical: set correct language so Hindi text is pronounced in Hindi, not English
+                voice=self.voice_id,    # female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
+                language=pipecat_lang,  # must match script: hi-IN for Devanagari
+                min_buffer_size=80,     # buffer enough chars for natural prosody before generating
+                max_chunk_length=400,   # large synthesis units = fewer prosodic resets
             ),
+            text_aggregation_mode=TextAggregationMode.TOKEN,
         )
 
         # ── Context & Aggregators ─────────────────────────────────────────
