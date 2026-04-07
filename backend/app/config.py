@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     SARVAM_LLM_BASE_URL: str = "https://api.sarvam.ai/v1"
     SARVAM_LLM_MODEL: str = os.getenv("SARVAM_LLM_MODEL", "sarvam-30b")
 
+    # LLM provider selection
+    # "groq"   → Groq llama-3.3-70b-versatile  (default: fastest, no thinking tokens)
+    # "sarvam" → Sarvam sarvam-30b              (reasoning model — use LLM_MAX_TOKENS ≥ 2000)
+    # "openai" → OpenAI gpt-4o-mini             (reliable fallback)
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq")
+    # Max completion tokens. For sarvam-30b set 2000+ to allow thinking (~700 tokens) + response.
+    LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "300"))
+
     # Defaults
     DEFAULT_LLM_MODEL: str = "sarvam-30b"
     DEFAULT_LANGUAGE: str = "hindi"

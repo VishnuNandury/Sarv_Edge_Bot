@@ -17,7 +17,9 @@ pydantic-settings==2.8.1
 # sarvam  → sarvamai SDK (STT/TTS/LLM via SarvamLLMService — added in 0.0.108)
 # webrtc  → aiortc>=1.14.0 + opencv (SmallWebRTC transport)
 # openai  → included in pipecat-ai base deps
-pipecat-ai[sarvam,webrtc]==0.0.108
+# groq    → groq Python SDK (required by pipecat GroqLLMService)
+pipecat-ai[sarvam,webrtc,groq]==0.0.108
+groq>=0.9.0
 
 # ─────────────────── Voice / Audio ────────────────────────
 # edge-tts is used by WhisperEdgePipeline only

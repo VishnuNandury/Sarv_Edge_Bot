@@ -122,6 +122,7 @@ class SarvamPipecatPipeline:
             from pipecat.services.groq.llm import GroqLLMService
             from pipecat.services.openai.llm import OpenAILLMService
             from pipecat.services.openai.base_llm import OpenAILLMSettings
+            from pipecat.services.sarvam.llm import SarvamLLMService, SarvamLLMSettings
             from pipecat.processors.aggregators.llm_response_universal import (
                 LLMContextAggregatorPair,
                 LLMUserAggregatorParams,
@@ -180,42 +181,54 @@ class SarvamPipecatPipeline:
         )
 
         # ── LLM ───────────────────────────────────────────────────────────
-        # WHY Groq instead of sarvam-30b:
-        # sarvam-30b is a reasoning model. Its "thinking" phase consumes a
-        # minimum of ~600-700 tokens regardless of max_tokens or reasoning_effort
-        # setting. With max_tokens ≤ 600, ALL tokens go to thinking → the actual
-        # spoken response is empty → TTS receives nothing → silence. The only
-        # reliable fix is to use a non-reasoning model.
+        # Provider is controlled by LLM_PROVIDER env var (default: "groq").
         #
-        # Groq llama-3.3-70b-versatile:
-        # - Non-reasoning: TTFB < 500ms, no thinking token overhead
-        # - Excellent Hindi/Devanagari generation quality
-        # - OpenAI-compatible, drop-in replacement via pipecat GroqLLMService
-        # - Falls back to OpenAI gpt-4o-mini if GROQ_API_KEY is not set
-        _groq_key = settings.GROQ_API_KEY
-        _openai_key = settings.OPENAI_API_KEY
-        if _groq_key:
+        # "groq"   → llama-3.3-70b-versatile — fastest, no thinking tokens, TTFB < 500ms
+        # "sarvam" → sarvam-30b              — reasoning model; use LLM_MAX_TOKENS=2000
+        #            WARNING: sarvam-30b uses ~700 thinking tokens minimum. With
+        #            max_tokens < 700 the entire budget goes to thinking → empty
+        #            response → silence. Set LLM_MAX_TOKENS=2000 when testing.
+        # "openai" → gpt-4o-mini             — reliable non-reasoning fallback
+        _provider = settings.LLM_PROVIDER.lower()
+        _max_tokens = settings.LLM_MAX_TOKENS
+
+        if _provider == "sarvam":
+            llm = SarvamLLMService(
+                api_key=settings.SARVAM_API_KEY,
+                settings=SarvamLLMSettings(
+                    model=settings.SARVAM_LLM_MODEL,
+                    temperature=0.7,
+                    max_tokens=_max_tokens,
+                    reasoning_effort="low",
+                    top_p=0.9,
+                ),
+            )
+            logger.info(
+                f"[SarvamPipecat:{self.session_id}] LLM: Sarvam {settings.SARVAM_LLM_MODEL} "
+                f"(max_tokens={_max_tokens})"
+            )
+        elif _provider == "openai":
+            llm = OpenAILLMService(
+                api_key=settings.OPENAI_API_KEY,
+                settings=OpenAILLMSettings(
+                    model="gpt-4o-mini",
+                    temperature=0.7,
+                    max_tokens=_max_tokens,
+                    top_p=0.9,
+                ),
+            )
+            logger.info(f"[SarvamPipecat:{self.session_id}] LLM: OpenAI gpt-4o-mini")
+        else:  # "groq" (default)
             llm = GroqLLMService(
-                api_key=_groq_key,
+                api_key=settings.GROQ_API_KEY,
                 settings=GroqLLMService.Settings(
                     model="llama-3.3-70b-versatile",
                     temperature=0.7,
-                    max_tokens=300,   # short voice replies — no thinking overhead
+                    max_tokens=_max_tokens,
                     top_p=0.9,
                 ),
             )
             logger.info(f"[SarvamPipecat:{self.session_id}] LLM: Groq llama-3.3-70b-versatile")
-        else:
-            llm = OpenAILLMService(
-                api_key=_openai_key,
-                settings=OpenAILLMSettings(
-                    model="gpt-4o-mini",
-                    temperature=0.7,
-                    max_tokens=300,
-                    top_p=0.9,
-                ),
-            )
-            logger.info(f"[SarvamPipecat:{self.session_id}] LLM: OpenAI gpt-4o-mini (fallback)")
 
         # ── TTS ───────────────────────────────────────────────────────────
         # TextAggregationMode.SENTENCE (default): pipecat accumulates LLM tokens
