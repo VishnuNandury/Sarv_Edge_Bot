@@ -39,11 +39,11 @@ export const customersApi = {
 
 export const conversationsApi = {
   list: (params?: { search?: string; status?: string; agent_type?: string; date_from?: string; date_to?: string; page?: number; limit?: number }) =>
-    api.get('/api/sessions', { params }),
-  get: (id: string) => api.get(`/api/sessions/${id}`),
-  getTranscript: (id: string) => api.get(`/api/sessions/${id}/transcript`),
-  getMetrics: (id: string) => api.get(`/api/sessions/${id}/metrics`),
-  delete: (id: string) => api.delete(`/api/sessions/${id}`),
+    api.get('/api/conversations', { params }),
+  get: (id: string) => api.get(`/api/conversations/${id}`),
+  getTranscript: (id: string) => api.get(`/api/conversations/${id}/transcript`),
+  getMetrics: (id: string) => api.get(`/api/conversations/${id}/metrics`),
+  delete: (id: string) => api.delete(`/api/conversations/${id}`),
 };
 
 export const campaignsApi = {

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot, Mic } from 'lucide-react';
-import type { AgentConfig } from '@/lib/types';
+import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot, Mic, Cpu } from 'lucide-react';
+import type { AgentConfig, LLMProvider } from '@/lib/types';
 
 interface AgentConfigProps {
   onStart: (config: AgentConfig) => void;
@@ -29,6 +29,12 @@ const BULBUL_V3_VOICES = [
   { id: 'rohan',  label: 'Rohan',  gender: 'M' },
   { id: 'amit',   label: 'Amit',   gender: 'M' },
   { id: 'dev',    label: 'Dev',    gender: 'M' },
+];
+
+const LLM_PROVIDERS: { id: LLMProvider; label: string; description: string; defaultTokens: number }[] = [
+  { id: 'groq',   label: 'Groq',   description: 'llama-3.3-70b · sub-500ms · no thinking tokens', defaultTokens: 300 },
+  { id: 'sarvam', label: 'Sarvam', description: 'sarvam-30b · reasoning model · needs 2000+ tokens', defaultTokens: 2000 },
+  { id: 'openai', label: 'OpenAI', description: 'gpt-4o-mini · ~1s · reliable fallback', defaultTokens: 300 },
 ];
 
 const LANGUAGES = [
@@ -65,6 +71,8 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
     agentType: 'sarvam',
     language: 'hi-IN',
     voice: 'priya',
+    llmProvider: 'groq',
+    llmMaxTokens: 300,
   });
 
   const set = (key: keyof AgentConfig, value: unknown) =>
@@ -208,10 +216,11 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
           </div>
         </div>
 
-        {/* Agent Type */}
+        {/* Agent Speech (STT/TTS engine) */}
         <div className="space-y-3">
-          <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest">Agent Engine</p>
-
+          <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest flex items-center gap-1.5">
+            <Mic size={10} />Agent Speech
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {(['sarvam', 'whisper_edge'] as const).map((type) => (
               <button
@@ -227,6 +236,50 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
                 {type === 'sarvam' ? 'Sarvam' : 'Whisper Edge'}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Agent LLM */}
+        <div className="space-y-3">
+          <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest flex items-center gap-1.5">
+            <Cpu size={10} />Agent LLM
+          </p>
+          <div className="space-y-1.5">
+            {LLM_PROVIDERS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setConfig((prev) => ({ ...prev, llmProvider: p.id, llmMaxTokens: p.defaultTokens }))}
+                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg border text-left transition-all ${
+                  config.llmProvider === p.id
+                    ? 'border-indigo-500/50 bg-indigo-600/10'
+                    : 'border-[#2a2d38] bg-[#0a0b0e] hover:border-[#3a3d4a]'
+                }`}
+              >
+                <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${config.llmProvider === p.id ? 'bg-indigo-400' : 'bg-[#475569]'}`} />
+                <div className="min-w-0">
+                  <div className={`text-xs font-semibold ${config.llmProvider === p.id ? 'text-indigo-300' : 'text-[#94a3b8]'}`}>{p.label}</div>
+                  <div className="text-[10px] text-[#475569] mt-0.5 leading-snug">{p.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Max tokens — editable, auto-set on provider switch */}
+          <div>
+            <label className={labelClass}>
+              Max Tokens
+              {config.llmProvider === 'sarvam' && (
+                <span className="ml-1.5 text-amber-400/80 font-normal">⚠ sarvam-30b needs ≥ 2000</span>
+              )}
+            </label>
+            <input
+              type="number"
+              className={inputClass}
+              value={config.llmMaxTokens}
+              onChange={(e) => set('llmMaxTokens', Number(e.target.value))}
+              min={100}
+              step={100}
+            />
           </div>
         </div>
 

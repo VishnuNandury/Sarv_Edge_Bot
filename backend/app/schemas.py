@@ -234,6 +234,11 @@ class VoiceSessionCreate(BaseModel):
     due_date: Optional[str] = Field(default=None, alias="dueDate")
     language: Optional[str] = Field(default="hi-IN", alias="language")
     voice_id: Optional[str] = Field(default="priya", alias="voice")
+    # LLM provider selection — controllable from the UI
+    # "groq" (default) | "sarvam" | "openai"
+    llm_provider: Optional[str] = Field(default="groq", alias="llmProvider")
+    # Max completion tokens — for sarvam-30b set ≥ 2000 to cover thinking tokens
+    llm_max_tokens: Optional[int] = Field(default=300, alias="llmMaxTokens")
 
 
 class VoiceSessionResponse(BaseModel):

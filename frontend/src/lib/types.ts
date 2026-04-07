@@ -146,6 +146,8 @@ export type WSEvent = {
   tokens_output?: number;
 };
 
+export type LLMProvider = 'groq' | 'sarvam' | 'openai';
+
 export interface AgentConfig {
   customerName: string;
   customerId?: string;
@@ -157,6 +159,8 @@ export interface AgentConfig {
   agentType: 'sarvam' | 'whisper_edge';
   language: string;
   voice: string;
+  llmProvider: LLMProvider;
+  llmMaxTokens: number;
 }
 
 export interface DashboardStats {

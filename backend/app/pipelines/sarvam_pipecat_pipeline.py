@@ -81,6 +81,8 @@ class SarvamPipecatPipeline:
         ws_emit: Callable,
         agent_config: Optional[Dict[str, Any]] = None,
         voice_id: str = "priya",
+        llm_provider: str = "groq",
+        llm_max_tokens: int = 300,
     ):
         self.session_id = session_id
         self.customer_id = customer_id
@@ -91,6 +93,9 @@ class SarvamPipecatPipeline:
         self.agent_config = agent_config or {}
         self.voice_id = voice_id
         self._has_db_record: bool = bool(customer_id)
+
+        self.llm_provider = llm_provider.lower()
+        self.llm_max_tokens = llm_max_tokens
 
         self.is_running = False
         self.is_ended = False
@@ -181,16 +186,16 @@ class SarvamPipecatPipeline:
         )
 
         # ── LLM ───────────────────────────────────────────────────────────
-        # Provider is controlled by LLM_PROVIDER env var (default: "groq").
+        # Provider and max_tokens are set per-session from the UI (Agent LLM selector).
+        # Falls back to LLM_PROVIDER / LLM_MAX_TOKENS env vars if not supplied.
         #
         # "groq"   → llama-3.3-70b-versatile — fastest, no thinking tokens, TTFB < 500ms
-        # "sarvam" → sarvam-30b              — reasoning model; use LLM_MAX_TOKENS=2000
-        #            WARNING: sarvam-30b uses ~700 thinking tokens minimum. With
-        #            max_tokens < 700 the entire budget goes to thinking → empty
-        #            response → silence. Set LLM_MAX_TOKENS=2000 when testing.
+        # "sarvam" → sarvam-30b              — reasoning model; needs max_tokens ≥ 2000
+        #            WARNING: sarvam-30b uses ~700 thinking tokens minimum. If
+        #            max_tokens < 700, all tokens go to thinking → empty response → silence.
         # "openai" → gpt-4o-mini             — reliable non-reasoning fallback
-        _provider = settings.LLM_PROVIDER.lower()
-        _max_tokens = settings.LLM_MAX_TOKENS
+        _provider = self.llm_provider or settings.LLM_PROVIDER.lower()
+        _max_tokens = self.llm_max_tokens or settings.LLM_MAX_TOKENS
 
         if _provider == "sarvam":
             llm = SarvamLLMService(

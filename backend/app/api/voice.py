@@ -141,6 +141,8 @@ async def create_voice_session(
         customer_context=customer_context,
         db_session=db,
         voice_id=payload.voice_id or "priya",
+        llm_provider=payload.llm_provider or "groq",
+        llm_max_tokens=payload.llm_max_tokens or 300,
     )
 
     _active_pipelines[session_id] = pipeline
@@ -181,6 +183,8 @@ def _create_pipeline(
     customer_context: Dict[str, Any],
     db_session: AsyncSession,
     voice_id: str = "priya",
+    llm_provider: str = "groq",
+    llm_max_tokens: int = 300,
 ) -> Any:
     """Instantiate the correct pipeline class based on agent_type."""
     if agent_type == "sarvam":
@@ -193,6 +197,8 @@ def _create_pipeline(
             db_session=db_session,
             ws_emit=ws_emit,
             voice_id=voice_id,
+            llm_provider=llm_provider,
+            llm_max_tokens=llm_max_tokens,
         )
     elif agent_type == "whisper_edge":
         from app.pipelines.whisper_edge_pipeline import WhisperEdgePipeline
