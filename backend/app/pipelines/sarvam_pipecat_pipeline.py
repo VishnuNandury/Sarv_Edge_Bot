@@ -127,6 +127,7 @@ class SarvamPipecatPipeline:
             from pipecat.frames.frames import (
                 EndFrame,
                 LLMMessagesAppendFrame,
+                LLMRunFrame,
             )
             from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
             from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
@@ -182,13 +183,11 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                # sarvam-30b is a reasoning model: thinking tokens count against max_tokens.
-                # Thinking budget scales with prompt complexity: at 600-700 prompt tokens
-                # the model consumes ~500 thinking tokens, leaving only ~60 for speech →
-                # truncated mid-sentence. Set max_tokens high enough to cover thinking (≤600)
-                # plus the actual spoken response (≤150 for 1-2 Devanagari sentences).
-                max_tokens=1500,
-                reasoning_effort="low",  # minimise thinking overhead; voice needs 1-2 sentences
+                # sarvam-30b thinking budget scales with prompt size.
+                # Compact prompt (~120 tokens) + low effort → ~150-200 thinking tokens.
+                # 400 = ~200 thinking + ~150 actual response → well within budget, ~2s gen time.
+                max_tokens=400,
+                reasoning_effort="low",
                 top_p=0.9,
             ),
         )
@@ -297,33 +296,16 @@ class SarvamPipecatPipeline:
                 "current_node": self.flow_manager.current_node.to_dict(),
             })
 
-            # Trigger the LLM to generate the opening greeting.
-            #
-            # WHY NOT TTSSpeakFrame:
-            # SarvamTTSService uses pause_frame_processing=True. When a
-            # TTSSpeakFrame is interrupted (customer speaks while greeting
-            # plays), BotStoppedSpeakingFrame is never received, so frame
-            # processing stays permanently paused and every subsequent LLM
-            # response is silently dropped — the agent never speaks again.
-            #
-            # Using LLMMessagesAppendFrame routes through the normal
-            # LLM → TTS path, so pause_frame_processing is managed
-            # correctly by the LLM response lifecycle.
-            #
-            # WHY THE WAIT:
-            # on_client_connected fires ~0.4s after the pipeline task starts,
-            # but StartFrame takes ~1.5–2s to propagate through STT+TTS
-            # WebSocket connections. The flag is stored as __started
-            # (name-mangled, inaccessible), so we wait a fixed 2.5s which
-            # covers the typical ~1.5s startup with a comfortable margin.
-            await asyncio.sleep(2.5)
-
-            await user_aggregator.push_frame(
-                LLMMessagesAppendFrame(
-                    messages=[{"role": "user", "content": "[call connected]"}],
-                    run_llm=True,
-                )
-            )
+            # Official pipecat pattern for triggering the opening greeting
+            # (per https://docs.pipecat.ai/pipecat/learn/session-initialization):
+            #   1. Append a user message directly to the context object.
+            #   2. Queue LLMRunFrame via task.queue_frames — this puts the frame
+            #      into the pipeline task's source queue, which buffers it until
+            #      the pipeline is ready (StartFrame propagated through all
+            #      processors). No asyncio.sleep needed — task.queue_frames
+            #      handles the startup timing internally.
+            context.messages.append({"role": "user", "content": "[call connected]"})
+            await self._task.queue_frames([LLMRunFrame()])
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(transport, client):

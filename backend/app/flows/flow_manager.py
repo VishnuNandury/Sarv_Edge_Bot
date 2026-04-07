@@ -109,52 +109,30 @@ class FlowManager:
         return [e for e in self.edges if e.source == node_id]
 
     def get_system_prompt(self) -> str:
-        """Build full system prompt for the current node, injecting customer context."""
+        """Build system prompt for the current node — compact to minimise LLM thinking budget."""
         node = self.current_node
-        base_prompt = self._build_base_prompt()
-        node_instruction = self._interpolate(node.system_prompt_snippet)
-
-        return (
-            f"{base_prompt}\n\n"
-            f"## Current Step: {node.label}\n"
-            f"{node.description}\n\n"
-            f"### Instructions:\n{node_instruction}\n\n"
-            f"{self._get_transition_hints()}"
-        )
+        base = self._build_base_prompt()
+        instruction = self._interpolate(node.system_prompt_snippet)
+        return f"{base}\n\nTask: {instruction}"
 
     def _build_base_prompt(self) -> str:
+        """
+        Compact base prompt (~80 tokens).
+
+        Deliberately short: sarvam-30b is a reasoning model whose thinking-token
+        budget scales with prompt size. A 670-token prompt causes ~1500 thinking
+        tokens (10+ second generation). Keeping prompt under ~150 tokens total
+        keeps generation under ~2 seconds.
+        """
         ctx = self.customer_context
         return (
-            "You are a professional loan collection agent for an Indian NBFC. "
-            "You speak in a natural mix of Hindi and English (Hinglish). "
-            "You are empathetic but firm. You never threaten or harass.\n\n"
-            "## CRITICAL — Language and Script Rule:\n"
-            "You are speaking through a Hindi TTS (text-to-speech) engine. "
-            "ALL Hindi words MUST be written in Devanagari script. "
-            "NEVER write Hindi in Roman transliteration — the TTS engine will mispronounce it. "
-            "For example: write 'मैं' not 'main', 'आप' not 'aap', 'नमस्ते' not 'Namaste', "
-            "'हूँ' not 'hoon', 'क्या' not 'kya', 'धन्यवाद' not 'dhanyawad', "
-            "'नहीं' not 'nahi', 'ठीक है' not 'theek hai', 'बात' not 'baat'. "
-            "English words (loan, EMI, CIBIL, UTR, UPI, receipt, account, credit score) "
-            "may remain in English as the TTS handles them correctly.\n\n"
-            f"## Customer Information:\n"
-            f"- Name: {ctx.get('name', 'Customer')}\n"
-            f"- Loan Amount: Rs.{ctx.get('loan_amount', '0')}\n"
-            f"- Outstanding Amount: Rs.{ctx.get('outstanding_amount', '0')}\n"
-            f"- Days Past Due (DPD): {ctx.get('dpd', 0)} days\n"
-            f"- Due Date: {ctx.get('due_date', 'N/A')}\n"
-            f"- Preferred Language: {ctx.get('preferred_language', 'Hindi')}\n\n"
-            "## Guidelines:\n"
-            "- Always greet warmly and identify yourself\n"
-            "- Be empathetic but professional\n"
-            "- OUTPUT LANGUAGE: Respond primarily in Hindi (Devanagari). "
-            "Use English ONLY for technical terms (loan, EMI, CIBIL, UTR, UPI, payment, account, receipt). "
-            "All other words — including greetings, questions, and transitions — MUST be in Devanagari Hindi.\n"
-            "- Never threaten or harass\n"
-            "- Always offer payment options\n"
-            "- STRICT OUTPUT RULE: 1-2 sentences maximum. Never exceed 30 words.\n"
-            "- Output ONLY the spoken conversational text. Never output reasoning, instructions, or labels.\n"
-            "- Capture commitment amounts and dates accurately\n"
+            f"Hindi loan collection agent. Empathetic, professional. Never threaten.\n"
+            f"SCRIPT: All Hindi in Devanagari (never Roman transliteration). "
+            f"English only for: loan, EMI, payment, account, UTR, UPI, CIBIL, receipt.\n"
+            f"CUSTOMER: {ctx.get('name', 'Customer')}, "
+            f"Rs.{ctx.get('outstanding_amount', '0')} overdue, "
+            f"{ctx.get('dpd', 0)} DPD.\n"
+            f"REPLY: Exactly 1 sentence, max 20 words. Spoken text only — no reasoning or labels."
         )
 
     def _interpolate(self, template: str) -> str:
@@ -183,27 +161,6 @@ class FlowManager:
         for key, value in substitutions.items():
             result = result.replace(f"{{{key}}}", str(value))
         return result
-
-    def _get_transition_hints(self) -> str:
-        """
-        For decision nodes (multiple outgoing edges), embed the ACTUAL instructions
-        for each branch so the LLM knows exactly what to say for each customer response.
-        Single-edge nodes get no hint — the agent just progresses naturally.
-        """
-        outgoing = self.get_outgoing_edges(self.current_node_id)
-        if not outgoing:
-            return "## This is the final step. Wrap up the call gracefully."
-
-        if len(outgoing) == 1:
-            return ""  # Single path — no branching decision needed
-
-        hints = "## IMPORTANT — How to respond based on the customer's answer:\n"
-        for edge in outgoing:
-            target = self.nodes.get(edge.target)
-            if target:
-                target_instruction = self._interpolate(target.system_prompt_snippet)
-                hints += f"- If customer indicates '{edge.label}': {target_instruction}\n"
-        return hints
 
     def transition_to(self, node_id: str) -> bool:
         """Manually transition to a specific node."""
