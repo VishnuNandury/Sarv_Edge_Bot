@@ -130,7 +130,6 @@ class SarvamPipecatPipeline:
             )
             from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
             from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
-            from pipecat.services.tts_service import TextAggregationMode
         except ImportError as e:
             raise RuntimeError(
                 f"pipecat-ai not installed or incomplete: {e}. "
@@ -195,32 +194,37 @@ class SarvamPipecatPipeline:
         )
 
         # ── TTS ───────────────────────────────────────────────────────────
-        # TextAggregationMode.TOKEN: stream LLM tokens directly to the TTS WebSocket
-        # as they arrive instead of waiting for sentence boundaries.
+        # TextAggregationMode.SENTENCE (default): pipecat accumulates LLM tokens
+        # until a sentence boundary, then calls run_tts(sentence).
         #
-        # WHY TOKEN MODE:
-        # SENTENCE mode (default) calls run_tts() once per detected sentence.
-        # Each call sends a separate JSON text message to Sarvam's WebSocket,
-        # causing Sarvam to start a fresh synthesis unit per sentence → prosodic
-        # reset between sentences → audible tone change + gap.
+        # WHY NOT TOKEN MODE:
+        # TOKEN mode sends each raw LLM token (including leading whitespace,
+        # newlines, and punctuation) directly to Sarvam's WebSocket. Sarvam
+        # rejects messages with no Devanagari/allowed characters → 400 error
+        # → TTS disconnects → audio lost even though transcript is produced.
         #
-        # TOKEN mode sends tokens to the same open WebSocket as they stream in.
-        # Sarvam buffers them server-side (min_buffer_size) and synthesises one
-        # continuous audio stream → no inter-sentence breaks, consistent voice.
+        # WHY min_buffer_size=80 fixes the inter-sentence gap:
+        # Each sentence is sent as a separate WebSocket text message. Sarvam
+        # buffers incoming text server-side before synthesis. With the old
+        # min_buffer_size=50: sentence 1 (≈62 chars) > 50 → Sarvam starts
+        # synthesising sentence 1 immediately without waiting for sentence 2 →
+        # two separate synthesis sessions → prosodic reset → tone change + gap.
+        # With min_buffer_size=80: sentence 1 (62 chars) < 80 → Sarvam waits →
+        # sentence 2 arrives → combined ≈82 chars > 80 → ONE synthesis session
+        # for both sentences → continuous audio, consistent voice throughout.
         #
-        # min_buffer_size=80: wait for ≥80 chars before Sarvam starts generating
-        # audio (prevents choppy output from single-token messages).
-        # max_chunk_length=400: larger Sarvam synthesis units → more natural prosody.
+        # max_chunk_length=400: Sarvam's internal chunk limit. Old 150 caused
+        # single long sentences to be split mid-phrase → internal prosodic reset.
+        # 400 keeps a full 1-2 sentence response in one synthesis unit.
         tts = SarvamTTSService(
             api_key=settings.SARVAM_API_KEY,
             settings=SarvamTTSService.Settings(
                 model="bulbul:v3",
                 voice=self.voice_id,    # female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
                 language=pipecat_lang,  # must match script: hi-IN for Devanagari
-                min_buffer_size=80,     # buffer enough chars for natural prosody before generating
-                max_chunk_length=400,   # large synthesis units = fewer prosodic resets
+                min_buffer_size=80,     # buffer enough chars so Sarvam waits for full response before synthesising
+                max_chunk_length=400,   # large synthesis units = no mid-sentence prosodic resets
             ),
-            text_aggregation_mode=TextAggregationMode.TOKEN,
         )
 
         # ── Context & Aggregators ─────────────────────────────────────────
