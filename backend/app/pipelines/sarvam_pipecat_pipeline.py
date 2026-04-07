@@ -183,10 +183,11 @@ class SarvamPipecatPipeline:
             settings=SarvamLLMSettings(
                 model=settings.SARVAM_LLM_MODEL,
                 temperature=0.7,
-                # sarvam-30b thinking budget scales with prompt size.
-                # Compact prompt (~120 tokens) + low effort → ~150-200 thinking tokens.
-                # 400 = ~200 thinking + ~150 actual response → well within budget, ~2s gen time.
-                max_tokens=400,
+                # sarvam-30b minimum thinking budget is ~380-400 tokens regardless of
+                # prompt size. With max_tokens=400 the model exhausts all tokens on
+                # thinking → empty response → TTS never called → silence.
+                # 600 = ~400 thinking + ~150-200 actual response → fits comfortably.
+                max_tokens=600,
                 reasoning_effort="low",
                 top_p=0.9,
             ),
@@ -202,15 +203,12 @@ class SarvamPipecatPipeline:
         # rejects messages with no Devanagari/allowed characters → 400 error
         # → TTS disconnects → audio lost even though transcript is produced.
         #
-        # WHY min_buffer_size=80 fixes the inter-sentence gap:
-        # Each sentence is sent as a separate WebSocket text message. Sarvam
-        # buffers incoming text server-side before synthesis. With the old
-        # min_buffer_size=50: sentence 1 (≈62 chars) > 50 → Sarvam starts
-        # synthesising sentence 1 immediately without waiting for sentence 2 →
-        # two separate synthesis sessions → prosodic reset → tone change + gap.
-        # With min_buffer_size=80: sentence 1 (62 chars) < 80 → Sarvam waits →
-        # sentence 2 arrives → combined ≈82 chars > 80 → ONE synthesis session
-        # for both sentences → continuous audio, consistent voice throughout.
+        # min_buffer_size=30:
+        # Sarvam buffers incoming text server-side before starting synthesis.
+        # A 1-sentence Hindi reply is typically 40-70 chars — well above 30,
+        # so synthesis starts promptly without waiting for a second sentence.
+        # Setting this too high (e.g. 80) caused silence when the LLM produced
+        # a short response that never reached the threshold.
         #
         # max_chunk_length=400: Sarvam's internal chunk limit. Old 150 caused
         # single long sentences to be split mid-phrase → internal prosodic reset.
@@ -221,7 +219,7 @@ class SarvamPipecatPipeline:
                 model="bulbul:v3",
                 voice=self.voice_id,    # female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
                 language=pipecat_lang,  # must match script: hi-IN for Devanagari
-                min_buffer_size=80,     # buffer enough chars so Sarvam waits for full response before synthesising
+                min_buffer_size=30,     # 30 chars: safe floor for 1-sentence Hindi responses (~40-70 chars typical)
                 max_chunk_length=400,   # large synthesis units = no mid-sentence prosodic resets
             ),
         )
