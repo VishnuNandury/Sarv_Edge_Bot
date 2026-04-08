@@ -31,6 +31,8 @@ export default function VoiceAgentPage() {
     agentType: 'sarvam',
     language: 'hi-IN',
     voice: 'priya',
+    llmProvider: 'groq',
+    llmMaxTokens: 300,
   });
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
