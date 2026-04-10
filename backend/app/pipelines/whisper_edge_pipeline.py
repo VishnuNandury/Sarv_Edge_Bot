@@ -1,11 +1,11 @@
 """
 WhisperEdgePipeline: Voice pipeline using Groq Whisper STT, Groq LLaMA LLM,
-and Microsoft Edge TTS (free, high-quality Hindi voices).
+and Sarvam bulbul:v3 TTS.
 
 Architecture:
 - STT: Groq Whisper Large V3 Turbo (fast, multilingual)
 - LLM: Groq llama-3.3-70b-versatile
-- TTS: edge-tts with hi-IN-SwaraNeural voice
+- TTS: Sarvam bulbul:v3 REST API  (Edge TTS removed: Microsoft blocks cloud IPs → 403)
 - Transport: WebRTC (same as Sarvam pipeline)
 """
 import asyncio
@@ -26,19 +26,20 @@ from app.pipelines.base_pipeline import BasePipeline
 
 logger = logging.getLogger(__name__)
 
-# Edge TTS voice mapping by language preference
-EDGE_TTS_VOICE_MAP = {
-    "hi": "hi-IN-SwaraNeural",      # Natural Hindi female voice
-    "hi-male": "hi-IN-MadhurNeural",  # Natural Hindi male voice
-    "en": "en-IN-NeerjaNeural",     # Indian English female
-    "ta": "ta-IN-PallaviNeural",
-    "te": "te-IN-ShrutiNeural",
-    "kn": "kn-IN-SapnaNeural",
-    "ml": "ml-IN-SobhanaNeural",
-    "mr": "mr-IN-AarohiNeural",
-    "gu": "gu-IN-DhwaniNeural",
-    "bn": "bn-IN-TanishaaNeural",
+# Sarvam bulbul:v3 voice + language mapping (replaces Edge TTS — cloud-safe)
+SARVAM_LANG_MAP = {
+    "hi": "hi-IN",
+    "en": "en-IN",
+    "ta": "ta-IN",
+    "te": "te-IN",
+    "kn": "kn-IN",
+    "ml": "ml-IN",
+    "mr": "mr-IN",
+    "gu": "gu-IN",
+    "bn": "bn-IN",
+    "pa": "pa-IN",
 }
+SARVAM_TTS_URL = "https://api.sarvam.ai/text-to-speech"
 
 
 class WhisperEdgePipeline(BasePipeline):
@@ -126,64 +127,50 @@ class WhisperEdgePipeline(BasePipeline):
             "latency_ms": latency_ms,
         }
 
-    # ─────────────────────── TTS: Edge TTS ───────────────────────────────
+    # ─────────────────────── TTS: Sarvam bulbul:v3 ───────────────────────
 
     async def _synthesize_speech(self, text: str, language: str = "hi") -> bytes:
         """
-        Synthesize speech using Microsoft Edge TTS via edge-tts library.
-        Free, high-quality Indian language voices.
-        Returns MP3 audio bytes.
+        Synthesize speech using Sarvam bulbul:v3 REST API.
+        Edge TTS was removed: Microsoft blocks cloud/datacenter IPs with 403.
+        Sarvam REST API is reliable from any host.
+        Returns WAV audio bytes (decoded from base64 response).
         """
-        try:
-            import edge_tts  # type: ignore
-        except ImportError:
-            logger.error("edge-tts not installed. Run: pip install edge-tts")
-            raise RuntimeError("edge-tts library not available")
+        import base64
 
-        # Select appropriate voice
-        voice = EDGE_TTS_VOICE_MAP.get(language, "hi-IN-SwaraNeural")
+        lang_code = SARVAM_LANG_MAP.get(language, "hi-IN")
+        # Use voice from agent_config if set, otherwise default by gender hint
+        voice = self.agent_config.get("voice", "priya")
 
-        # Override based on agent config
-        if self.agent_config.get("voice"):
-            voice = self.agent_config["voice"]
+        payload = {
+            "inputs": [text[:500]],
+            "target_language_code": lang_code,
+            "speaker": voice,
+            "model": "bulbul:v3",
+            "speech_sample_rate": 16000,
+            "enable_preprocessing": True,
+        }
 
-        # Truncate for reasonable response length
-        text_to_speak = text[:500]
-
-        try:
-            communicate = edge_tts.Communicate(
-                text=text_to_speak,
-                voice=voice,
-                rate="+10%",    # Slightly faster for professional tone
-                volume="+0%",
-                pitch="+0Hz",
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(
+                SARVAM_TTS_URL,
+                json=payload,
+                headers={"api-subscription-key": settings.SARVAM_API_KEY},
             )
 
-            audio_buffer = io.BytesIO()
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    audio_buffer.write(chunk["data"])
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Sarvam TTS error {response.status_code}: {response.text[:200]}"
+            )
 
-            audio_bytes = audio_buffer.getvalue()
-            logger.debug(f"[Edge TTS] Generated {len(audio_bytes)} bytes with voice {voice}")
-            return audio_bytes
+        data = response.json()
+        audios = data.get("audios", [])
+        if not audios:
+            raise RuntimeError("Sarvam TTS returned empty audios list")
 
-        except Exception as e:
-            logger.error(f"[Edge TTS] Error with voice {voice}: {e}")
-            # Fallback to a different voice
-            try:
-                communicate = edge_tts.Communicate(
-                    text=text_to_speak,
-                    voice="en-IN-NeerjaNeural",
-                )
-                audio_buffer = io.BytesIO()
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        audio_buffer.write(chunk["data"])
-                return audio_buffer.getvalue()
-            except Exception as fallback_e:
-                logger.error(f"[Edge TTS] Fallback also failed: {fallback_e}")
-                raise RuntimeError(f"Edge TTS synthesis failed: {e}")
+        audio_bytes = base64.b64decode(audios[0])
+        logger.debug(f"[Sarvam TTS] {len(audio_bytes)} bytes, voice={voice}, lang={lang_code}")
+        return audio_bytes
 
     # ─────────────────────── WebRTC Transport ────────────────────────────
 

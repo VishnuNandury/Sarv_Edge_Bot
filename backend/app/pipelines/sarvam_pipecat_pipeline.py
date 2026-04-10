@@ -30,6 +30,78 @@ from app.flows.flow_manager import FlowManager
 logger = logging.getLogger(__name__)
 
 
+class _MetricsCollector:
+    """
+    Pipecat BaseObserver that accumulates per-turn TTFB and token usage
+    so they can be persisted to SessionMetrics at end of session.
+
+    Captures:
+    - TTFBMetricsData  → per-service time-to-first-byte (seconds → ms)
+    - LLMUsageMetricsData → prompt / completion token counts
+    """
+
+    def __init__(self):
+        self._frames_seen: set = set()
+        self.stt_ttfb_ms: List[float] = []
+        self.llm_ttfb_ms: List[float] = []
+        self.tts_ttfb_ms: List[float] = []
+        self.prompt_tokens: List[int] = []
+        self.completion_tokens: List[int] = []
+
+    def _make_observer(self):
+        """Return a pipecat BaseObserver instance wired to this collector."""
+        from pipecat.observers.base_observer import BaseObserver, FramePushed
+
+        collector = self  # close over self
+
+        class _Obs(BaseObserver):
+            async def on_push_frame(self, data: FramePushed):
+                from pipecat.frames.frames import MetricsFrame
+                from pipecat.metrics.metrics import TTFBMetricsData, LLMUsageMetricsData
+
+                frame = data.frame
+                if not isinstance(frame, MetricsFrame):
+                    return
+                if frame.id in collector._frames_seen:
+                    return
+                collector._frames_seen.add(frame.id)
+
+                for md in frame.data:
+                    name = (md.processor or "").lower()
+                    if isinstance(md, TTFBMetricsData):
+                        ms = md.value * 1000
+                        if "stt" in name:
+                            collector.stt_ttfb_ms.append(ms)
+                        elif "llm" in name:
+                            collector.llm_ttfb_ms.append(ms)
+                        elif "tts" in name:
+                            collector.tts_ttfb_ms.append(ms)
+                    elif isinstance(md, LLMUsageMetricsData):
+                        usage = md.value
+                        collector.prompt_tokens.append(usage.prompt_tokens or 0)
+                        collector.completion_tokens.append(usage.completion_tokens or 0)
+
+        return _Obs()
+
+    def aggregated(self) -> Dict[str, Any]:
+        def avg(lst: List[float]) -> Optional[float]:
+            return round(sum(lst) / len(lst), 2) if lst else None
+
+        stt = avg(self.stt_ttfb_ms)
+        llm = avg(self.llm_ttfb_ms)
+        tts = avg(self.tts_ttfb_ms)
+        total = round((stt or 0) + (llm or 0) + (tts or 0), 2) or None
+
+        return {
+            "stt_latency_ms": stt,
+            "llm_latency_ms": llm,
+            "tts_latency_ms": tts,
+            "total_latency_ms": total,
+            "tokens_input": sum(self.prompt_tokens) if self.prompt_tokens else None,
+            "tokens_output": sum(self.completion_tokens) if self.completion_tokens else None,
+        }
+
+
 def _build_pipecat_ice_servers():
     """Deduplicated ICE server list for SmallWebRTCConnection."""
     if not settings.TURN_URL:
@@ -96,6 +168,7 @@ class SarvamPipecatPipeline:
 
         self.llm_provider = llm_provider.lower()
         self.llm_max_tokens = llm_max_tokens
+        self._metrics = _MetricsCollector()
 
         self.is_running = False
         self.is_ended = False
@@ -311,13 +384,15 @@ class SarvamPipecatPipeline:
                 "session_id": self.session_id,
             })
 
+        _metrics_obs = self._metrics._make_observer()
+
         self._task = PipelineTask(
             pipeline,
             params=PipelineParams(
                 # allow_interruptions deprecated in 0.0.99 — use user_turn_strategies instead
                 enable_metrics=True,
                 enable_usage_metrics=True,
-                observers=[MetricsLogObserver(), turn_observer],
+                observers=[MetricsLogObserver(), turn_observer, _metrics_obs],
             ),
         )
 
@@ -488,6 +563,32 @@ class SarvamPipecatPipeline:
 
         if self._has_db_record:
             await self._update_session_status(status, outcome)
+            await self._save_metrics()
+
+    async def _save_metrics(self) -> None:
+        """Persist accumulated TTFB / token metrics to SessionMetrics table."""
+        from app.models import SessionMetrics
+        from app.database import AsyncSessionLocal
+        data = self._metrics.aggregated()
+        # Skip if no useful data
+        if not any(v is not None for v in data.values()):
+            return
+        try:
+            async with AsyncSessionLocal() as db:
+                async with db.begin():
+                    record = SessionMetrics(
+                        id=str(uuid.uuid4()),
+                        session_id=self.session_id,
+                        stt_latency_ms=data["stt_latency_ms"],
+                        llm_latency_ms=data["llm_latency_ms"],
+                        tts_latency_ms=data["tts_latency_ms"],
+                        total_latency_ms=data["total_latency_ms"],
+                        tokens_input=data["tokens_input"],
+                        tokens_output=data["tokens_output"],
+                    )
+                    db.add(record)
+        except Exception as e:
+            logger.error(f"[SarvamPipecat] Metrics save error: {e}")
 
     async def _update_session_status(self, status: str, outcome: Optional[str]) -> None:
         from app.models import CallSession

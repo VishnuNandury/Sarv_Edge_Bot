@@ -114,29 +114,49 @@ async def create_voice_session(
             "segment": "test",
         }
 
-    # Create DB session record (only when a real customer_id is present)
+    # Create DB session record for ALL sessions (including demo/test without a real customer).
+    # When no customer_id is provided, create a lightweight demo Customer row so the
+    # FK constraint on call_sessions.customer_id is satisfied and the session appears
+    # in the conversations list.
     session_id = str(uuid.uuid4())
     flow_def = FLOWS[payload.flow_id]
 
-    if payload.customer_id:
-        db_session = CallSession(
-            id=session_id,
-            customer_id=payload.customer_id,
-            campaign_id=payload.campaign_id,
-            agent_type=payload.agent_type,
-            flow_id=payload.flow_id,
-            tier=flow_def.get("tier", "tier_1"),
+    effective_customer_id = payload.customer_id
+    if not effective_customer_id:
+        # Demo / test session — create a transient customer record
+        demo_customer = Customer(
+            id=str(uuid.uuid4()),
+            name=payload.customer_name or "Demo Customer",
+            phone=f"demo_{session_id[:8]}",   # unique, won't clash with real phones
+            loan_amount=payload.loan_amount or 0,
+            outstanding_amount=payload.outstanding_amount or 0,
+            dpd=payload.dpd or 0,
+            segment="demo",
+            preferred_language=(payload.language or "hi-IN").split("-")[0],
             status="active",
-            start_time=datetime.now(timezone.utc),
         )
-        db.add(db_session)
+        db.add(demo_customer)
         await db.flush()
+        effective_customer_id = demo_customer.id
+
+    db_session_record = CallSession(
+        id=session_id,
+        customer_id=effective_customer_id,
+        campaign_id=payload.campaign_id,
+        agent_type=payload.agent_type,
+        flow_id=payload.flow_id,
+        tier=flow_def.get("tier", "tier_1"),
+        status="active",
+        start_time=datetime.now(timezone.utc),
+    )
+    db.add(db_session_record)
+    await db.flush()
 
     # Initialize pipeline based on agent_type
     pipeline = _create_pipeline(
         agent_type=payload.agent_type,
         session_id=session_id,
-        customer_id=payload.customer_id,
+        customer_id=effective_customer_id,  # always set now
         flow_id=payload.flow_id,
         customer_context=customer_context,
         db_session=db,
