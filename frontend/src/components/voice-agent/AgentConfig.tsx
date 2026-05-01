@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Loader2, User, IndianRupee, Calendar, Globe, Bot, Mic, Cpu } from 'lucide-react';
 import type { AgentConfig, LLMProvider } from '@/lib/types';
+import { voiceApi } from '@/lib/api';
 
 interface AgentConfigProps {
   onStart: (config: AgentConfig) => void;
@@ -48,16 +49,26 @@ const LANGUAGES = [
 ];
 
 export default function AgentConfig({ onStart, onFlowChange, isConnected, isConnecting }: AgentConfigProps) {
-  const [customFlows, setCustomFlows] = useState<Array<{ id: string; name: string; description: string }>>([]);
+  const [allFlows, setAllFlows] = useState<Array<{ id: string; name: string; description: string }>>(BUILT_IN_FLOWS);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('sarvam_custom_flows');
-      if (raw) {
-        const flows = JSON.parse(raw) as Array<{ id: string; name: string; description: string }>;
-        setCustomFlows(flows.map(f => ({ id: f.id, name: f.name, description: f.description })));
-      }
-    } catch {}
+    voiceApi.getFlows()
+      .then(res => {
+        const apiFlows = res.data.flows.map(f => ({
+          id: f.id,
+          name: f.name,
+          description: f.description,
+        }));
+        setAllFlows(apiFlows.length ? apiFlows : BUILT_IN_FLOWS);
+      })
+      .catch(() => {
+        // fallback: built-ins + any locally saved flows
+        try {
+          const raw = localStorage.getItem('sarvam_custom_flows');
+          const custom = raw ? (JSON.parse(raw) as Array<{ id: string; name: string; description: string }>) : [];
+          setAllFlows([...BUILT_IN_FLOWS, ...custom.map(f => ({ id: f.id, name: f.name, description: f.description }))]);
+        } catch { /* keep built-ins */ }
+      });
   }, []);
 
   const [config, setConfig] = useState<AgentConfig>({
@@ -190,7 +201,7 @@ export default function AgentConfig({ onStart, onFlowChange, isConnected, isConn
           <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest">Flow Selection</p>
 
           <div className="space-y-2">
-            {[...BUILT_IN_FLOWS, ...customFlows].map((flow) => (
+            {allFlows.map((flow) => (
               <button
                 key={flow.id}
                 onClick={() => { set('flowId', flow.id); onFlowChange?.(flow.id); }}

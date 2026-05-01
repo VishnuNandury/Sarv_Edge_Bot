@@ -1,11 +1,18 @@
 import axios from 'axios';
 import type { AgentConfig, Customer, Campaign, DashboardStats, AnalyticsOverview } from './types';
 
-// In production (single-service Docker), frontend and API share the same host.
-// Use relative URLs unless NEXT_PUBLIC_API_URL is explicitly set (local dev).
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '',
   headers: { 'Content-Type': 'application/json' },
+});
+
+// Attach JWT token to every request
+api.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('converse_token') : null;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 api.interceptors.response.use(
@@ -15,6 +22,18 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const authApi = {
+  login: (username: string, password: string) =>
+    api.post<{ access_token: string; token_type: string; user: { id: string; username: string; email: string } }>(
+      '/api/auth/login', { username, password }
+    ),
+  signup: (data: { username: string; email: string; phone?: string; password: string; confirm_password: string }) =>
+    api.post<{ access_token: string; token_type: string; user: { id: string; username: string; email: string } }>(
+      '/api/auth/signup', data
+    ),
+  me: () => api.get<{ id: string; username: string; email: string; phone?: string }>('/api/auth/me'),
+};
 
 export const dashboardApi = {
   getStats: () => api.get<DashboardStats>('/api/dashboard/stats'),
@@ -75,12 +94,16 @@ export const voiceApi = {
   sendOffer: (sessionId: string, sdp: string) =>
     api.post<{ sdp: string; type: string }>(`/api/voice/sessions/${sessionId}/offer`, { sdp, type: 'offer' }),
   sendIceCandidate: (sessionId: string, candidate: RTCIceCandidateInit) =>
-    api.post(`/api/voice/sessions/${sessionId}/ice-candidate`, candidate),
+    api.post(`/api/voice/sessions/${sessionId}/ice`, candidate),
   endSession: (sessionId: string) => api.post(`/api/voice/sessions/${sessionId}/end`),
   getIceServers: () =>
     api.get<{ iceServers: RTCIceServer[] }>('/api/voice/ice-servers'),
   getFlows: () =>
     api.get<{ flows: Array<{ id: string; name: string; description: string; tier: string; nodes: unknown[]; edges: unknown[] }> }>('/api/flows'),
+  registerFlow: (flow: { id: string; name: string; description: string; nodes: unknown[]; edges: unknown[] }) =>
+    api.post<{ id: string; name: string }>('/api/flows', flow),
+  deleteFlow: (flowId: string) =>
+    api.delete(`/api/flows/${flowId}`),
 };
 
 export default api;

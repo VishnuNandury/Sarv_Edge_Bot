@@ -27,6 +27,28 @@ logger = logging.getLogger(__name__)
 
 # ─────────────────────────── App Lifespan ────────────────────────────────
 
+async def _seed_admin() -> None:
+    """Create the default admin user if it doesn't exist."""
+    import uuid
+    from passlib.context import CryptContext
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app.models import User
+
+    pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    async with AsyncSessionLocal() as db:
+        async with db.begin():
+            result = await db.execute(select(User).where(User.username == "admin"))
+            if not result.scalar_one_or_none():
+                db.add(User(
+                    id=str(uuid.uuid4()),
+                    username="admin",
+                    email="admin@converse.ai",
+                    password_hash=pwd.hash("converse1"),
+                ))
+                logger.info("Default admin created — username: admin / password: converse1")
+
+
 def _warm_up_pipecat() -> None:
     """Pre-load the Smart Turn ONNX model at startup so the first session doesn't pay the ~0.5s cost."""
     try:
@@ -47,9 +69,9 @@ async def lifespan(app: FastAPI):
     try:
         await create_tables()
         logger.info("Database tables created/verified.")
+        await _seed_admin()
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
-        # Don't crash on startup — DB might connect later
         logger.warning("Continuing without confirmed DB connection...")
 
     _warm_up_pipecat()
@@ -101,6 +123,7 @@ app.add_middleware(
 
 # ─────────────────────────── Routers ─────────────────────────────────────
 
+from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.customers import router as customers_router
 from app.api.conversations import router as conversations_router
@@ -108,6 +131,7 @@ from app.api.campaigns import router as campaigns_router
 from app.api.analytics import router as analytics_router
 from app.api.voice import router as voice_router
 
+app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(customers_router)
 app.include_router(conversations_router)

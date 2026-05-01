@@ -130,6 +130,17 @@ class SessionMetrics(Base):
     session = relationship("CallSession", back_populates="metrics")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False)
+    phone = Column(String(20), nullable=True)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class CampaignCustomer(Base):
     """Association table between campaigns and customers."""
     __tablename__ = "campaign_customers"

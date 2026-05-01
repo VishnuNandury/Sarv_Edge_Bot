@@ -12,8 +12,9 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import {
   Play, Zap, GitBranch, Hash, StopCircle,
-  Save, Upload, Download, Trash2, Plus, Check, X,
+  Save, Upload, Download, Trash2, Plus, Check, X, Rocket, AlertCircle,
 } from 'lucide-react';
+import { voiceApi } from '@/lib/api';
 
 // ── Types & Constants ─────────────────────────────────────────────────────────
 
@@ -237,7 +238,8 @@ function InfoPanel({ flowName, flowDesc, nodeCount, edgeCount }: {
         3. Drag from a node handle to connect<br />
         4. Click a node or edge to edit it<br />
         5. Name your flow and click Save<br />
-        6. Saved flows appear in Voice Agent
+        6. Click <strong style={{ color: '#60a5fa' }}>Deploy</strong> to register on backend<br />
+        7. Select your flow in Voice Agent
       </div>
       <div style={{ marginTop: 14 }}>
         <div style={{ fontSize: 9, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Export Format</div>
@@ -275,6 +277,8 @@ function FlowBuilderCanvas() {
   const [savedFlows, setSavedFlows] = useState<StoredFlow[]>([]);
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null);
   const [saveMsg, setSaveMsg] = useState(false);
+  const [deployMsg, setDeployMsg] = useState<'deployed' | 'error' | null>(null);
+  const [deploying, setDeploying] = useState(false);
   const rfWrapper = useRef<HTMLDivElement>(null);
   const { project } = useReactFlow();
 
@@ -375,6 +379,35 @@ function FlowBuilderCanvas() {
     setTimeout(() => setSaveMsg(false), 2000);
   }, [activeFlowId, flowName, flowDesc, nodes, edges, savedFlows]);
 
+  const deployFlow = useCallback(async () => {
+    if (!nodes.length) return;
+    const id = activeFlowId ?? `flow_${Date.now()}`;
+    const flowData = {
+      id,
+      name: flowName || 'Untitled Flow',
+      description: flowDesc,
+      nodes: nodes.map(n => ({
+        id: n.id, label: n.data.label, type: n.data.nodeType,
+        description: n.data.description, system_prompt_snippet: n.data.systemPrompt,
+        position: n.position,
+      })),
+      edges: edges.map(e => ({
+        id: e.id, source: e.source, target: e.target,
+        label: String(e.label ?? ''), type: 'llm',
+      })),
+    };
+    setDeploying(true);
+    try {
+      await voiceApi.registerFlow(flowData);
+      setDeployMsg('deployed');
+    } catch {
+      setDeployMsg('error');
+    } finally {
+      setDeploying(false);
+      setTimeout(() => setDeployMsg(null), 3000);
+    }
+  }, [activeFlowId, flowName, flowDesc, nodes, edges]);
+
   const loadFlow = useCallback((flow: StoredFlow) => {
     setNodes(flow.nodes); setEdges(flow.edges);
     setFlowName(flow.name); setFlowDesc(flow.description);
@@ -460,9 +493,30 @@ function FlowBuilderCanvas() {
         <input value={flowDesc} onChange={e => setFlowDesc(e.target.value)}
           style={{ ...inputSt, flex: 1, color: '#94a3b8' }} placeholder="Description (optional)..." />
         <button onClick={newFlow} title="New flow" style={btnSt}><Plus size={14} color="#94a3b8" /></button>
-        <button onClick={saveFlow} title="Save" style={{ ...btnSt, background: saveMsg ? '#14532d' : '#1a1d24', borderColor: saveMsg ? '#16a34a50' : '#2a2d38' }}>
+        <button onClick={saveFlow} title="Save to browser" style={{ ...btnSt, background: saveMsg ? '#14532d' : '#1a1d24', borderColor: saveMsg ? '#16a34a50' : '#2a2d38' }}>
           {saveMsg ? <Check size={14} color="#4ade80" /> : <Save size={14} color="#94a3b8" />}
           <span style={{ fontSize: 11, color: saveMsg ? '#4ade80' : '#94a3b8' }}>{saveMsg ? 'Saved' : 'Save'}</span>
+        </button>
+        <button
+          onClick={deployFlow}
+          disabled={deploying || !nodes.length}
+          title="Deploy to Voice Agent (registers flow on backend)"
+          style={{
+            ...btnSt,
+            background: deployMsg === 'deployed' ? '#1e3a5f' : deployMsg === 'error' ? '#450a0a' : '#1a1d24',
+            borderColor: deployMsg === 'deployed' ? '#3b82f650' : deployMsg === 'error' ? '#7f1d1d50' : '#2a2d38',
+            opacity: deploying || !nodes.length ? 0.5 : 1,
+            cursor: deploying || !nodes.length ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {deployMsg === 'deployed'
+            ? <Check size={14} color="#60a5fa" />
+            : deployMsg === 'error'
+            ? <AlertCircle size={14} color="#f87171" />
+            : <Rocket size={14} color="#94a3b8" />}
+          <span style={{ fontSize: 11, color: deployMsg === 'deployed' ? '#60a5fa' : deployMsg === 'error' ? '#f87171' : '#94a3b8' }}>
+            {deploying ? 'Deploying…' : deployMsg === 'deployed' ? 'Deployed!' : deployMsg === 'error' ? 'Failed' : 'Deploy'}
+          </span>
         </button>
         <button onClick={importFlow} title="Import JSON" style={btnSt}><Upload size={14} color="#94a3b8" /><span style={{ fontSize: 11, color: '#94a3b8' }}>Import</span></button>
         <button onClick={exportFlow} title="Export JSON" style={btnSt}><Download size={14} color="#94a3b8" /><span style={{ fontSize: 11, color: '#94a3b8' }}>Export</span></button>

@@ -386,6 +386,89 @@ async def get_flow(flow_id: str) -> Dict[str, Any]:
     return FLOWS[flow_id]
 
 
+@router.post("/flows")
+async def register_flow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Register a custom flow from the FlowBuilder UI into the in-memory FLOWS registry.
+    Transforms ReactFlow node/edge format into the backend FlowManager format.
+    """
+    import uuid as _uuid
+
+    flow_id = payload.get("id")
+    if not flow_id:
+        raise HTTPException(status_code=400, detail="Flow must have an id field")
+
+    raw_nodes = payload.get("nodes", [])
+    raw_edges = payload.get("edges", [])
+
+    node_type_map: Dict[str, str] = {}
+    nodes = []
+    for n in raw_nodes:
+        nid = n.get("id", str(_uuid.uuid4()))
+        if "data" in n:
+            d = n["data"]
+            ntype = d.get("nodeType", d.get("type", "action"))
+            nodes.append({
+                "id": nid,
+                "label": d.get("label", "Node"),
+                "type": ntype,
+                "description": d.get("description", ""),
+                "system_prompt_snippet": d.get("systemPrompt", d.get("system_prompt_snippet", "")),
+                "position": n.get("position", {"x": 0, "y": 0}),
+            })
+        else:
+            ntype = n.get("type", "action")
+            nodes.append({
+                "id": nid,
+                "label": n.get("label", "Node"),
+                "type": ntype,
+                "description": n.get("description", ""),
+                "system_prompt_snippet": n.get("system_prompt_snippet", ""),
+                "position": n.get("position", {"x": 0, "y": 0}),
+            })
+        node_type_map[nid] = ntype
+
+    if not any(n["type"] == "start" for n in nodes):
+        raise HTTPException(status_code=400, detail="Flow must contain at least one Start node")
+
+    edges = []
+    for e in raw_edges:
+        src = e.get("source", "")
+        edge_type = "dtmf" if node_type_map.get(src) == "dtmf" else "llm"
+        edges.append({
+            "id": e.get("id", str(_uuid.uuid4())),
+            "source": src,
+            "target": e.get("target", ""),
+            "label": str(e.get("label") or ""),
+            "type": edge_type,
+        })
+
+    flow_def: Dict[str, Any] = {
+        "id": flow_id,
+        "name": payload.get("name", "Custom Flow"),
+        "description": payload.get("description", ""),
+        "tier": "custom",
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+    FLOWS[flow_id] = flow_def
+    logger.info(f"[Flows] Registered custom flow '{flow_id}' ({len(nodes)} nodes, {len(edges)} edges)")
+    return flow_def
+
+
+@router.delete("/flows/{flow_id}", status_code=204)
+async def delete_flow(flow_id: str) -> None:
+    """Remove a custom flow. Built-in flows cannot be deleted."""
+    built_in = {"flow_basic", "flow_standard", "flow_advanced", "flow_field_visit"}
+    if flow_id in built_in:
+        raise HTTPException(status_code=400, detail="Cannot delete a built-in flow")
+    if flow_id not in FLOWS:
+        raise HTTPException(status_code=404, detail=f"Flow '{flow_id}' not found")
+    del FLOWS[flow_id]
+    logger.info(f"[Flows] Deleted custom flow '{flow_id}'")
+
+
 # ─────────────────────────── WebSocket Handler ───────────────────────────
 
 async def websocket_voice_handler(
