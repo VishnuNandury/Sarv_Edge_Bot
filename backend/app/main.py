@@ -49,6 +49,22 @@ async def _seed_admin() -> None:
                 logger.info("Default admin created — username: admin / password: converse1")
 
 
+async def _load_custom_flows() -> None:
+    """Load all custom flows from DB into the in-memory FLOWS registry on startup."""
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app.models import CustomFlow
+    from app.flows.flow_definitions import FLOWS
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(CustomFlow))
+        rows = result.scalars().all()
+        for row in rows:
+            FLOWS[row.id] = row.flow_data
+        if rows:
+            logger.info(f"Loaded {len(rows)} custom flow(s) from database into FLOWS registry.")
+
+
 def _warm_up_pipecat() -> None:
     """Pre-load the Smart Turn ONNX model at startup so the first session doesn't pay the ~0.5s cost."""
     try:
@@ -70,6 +86,7 @@ async def lifespan(app: FastAPI):
         await create_tables()
         logger.info("Database tables created/verified.")
         await _seed_admin()
+        await _load_custom_flows()
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         logger.warning("Continuing without confirmed DB connection...")

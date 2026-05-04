@@ -130,6 +130,19 @@ class SessionMetrics(Base):
     session = relationship("CallSession", back_populates="metrics")
 
 
+class CustomFlow(Base):
+    """User-created flows from the FlowBuilder UI — persisted so they survive server restarts."""
+    __tablename__ = "custom_flows"
+
+    id = Column(String(255), primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    flow_data = Column(JSON, nullable=False)
+    created_by = Column(UUID(as_uuid=False), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
 class User(Base):
     __tablename__ = "users"
 

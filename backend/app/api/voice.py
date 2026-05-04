@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,18 @@ from app.config import settings
 from app.database import get_db, AsyncSessionLocal
 from app.flows.flow_definitions import FLOWS
 from app.models import CallSession, Customer
+
+_oauth2_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+def _user_id_from_token(token: Optional[str]) -> Optional[str]:
+    """Extract user_id from JWT bearer token; returns None if missing/invalid."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        return payload.get("sub")
+    except JWTError:
+        return None
 from app.schemas import (
     VoiceSessionCreate, VoiceSessionResponse,
     SDPOfferRequest, ICECandidateRequest,
@@ -367,12 +381,27 @@ async def get_session_status(
 # ─────────────────────────── Flows API ───────────────────────────────────
 
 @router.get("/flows")
-async def list_flows() -> Dict[str, Any]:
-    """Return all flow definitions with full node/edge data for ReactFlow."""
-    return {
-        "flows": list(FLOWS.values()),
-        "count": len(FLOWS),
-    }
+async def list_flows(
+    db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(_oauth2_optional),
+) -> Dict[str, Any]:
+    """Return built-in flows + the current user's custom flows."""
+    from app.models import CustomFlow
+
+    built_in_ids = {"flow_basic", "flow_standard", "flow_advanced", "flow_field_visit"}
+    result_flows: List[Dict[str, Any]] = [FLOWS[fid] for fid in built_in_ids if fid in FLOWS]
+
+    user_id = _user_id_from_token(token)
+    if user_id:
+        rows = await db.execute(
+            select(CustomFlow).where(CustomFlow.created_by == user_id)
+        )
+        for row in rows.scalars().all():
+            # Ensure in-memory FLOWS is up to date (e.g. after restart + fresh load)
+            FLOWS[row.id] = row.flow_data
+            result_flows.append(row.flow_data)
+
+    return {"flows": result_flows, "count": len(result_flows)}
 
 
 @router.get("/flows/{flow_id}")
@@ -387,12 +416,17 @@ async def get_flow(flow_id: str) -> Dict[str, Any]:
 
 
 @router.post("/flows")
-async def register_flow(payload: Dict[str, Any]) -> Dict[str, Any]:
+async def register_flow(
+    payload: Dict[str, Any],
+    db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(_oauth2_optional),
+) -> Dict[str, Any]:
     """
-    Register a custom flow from the FlowBuilder UI into the in-memory FLOWS registry.
-    Transforms ReactFlow node/edge format into the backend FlowManager format.
+    Register a custom flow from the FlowBuilder UI.
+    Saves to DB (survives restarts) and registers in the in-memory FLOWS dict.
     """
     import uuid as _uuid
+    from app.models import CustomFlow
 
     flow_id = payload.get("id")
     if not flow_id:
@@ -452,21 +486,63 @@ async def register_flow(payload: Dict[str, Any]) -> Dict[str, Any]:
         "edges": edges,
     }
 
+    user_id = _user_id_from_token(token)
+
+    # Upsert into DB so the flow survives server restarts
+    existing = await db.execute(select(CustomFlow).where(CustomFlow.id == flow_id))
+    db_row = existing.scalar_one_or_none()
+    if db_row:
+        db_row.name = flow_def["name"]
+        db_row.description = flow_def["description"]
+        db_row.flow_data = flow_def
+        if user_id:
+            db_row.created_by = user_id
+    else:
+        db.add(CustomFlow(
+            id=flow_id,
+            name=flow_def["name"],
+            description=flow_def["description"],
+            flow_data=flow_def,
+            created_by=user_id,
+        ))
+    await db.flush()
+
+    # Also register in memory for immediate use
     FLOWS[flow_id] = flow_def
-    logger.info(f"[Flows] Registered custom flow '{flow_id}' ({len(nodes)} nodes, {len(edges)} edges)")
+    logger.info(f"[Flows] Deployed custom flow '{flow_id}' ({len(nodes)} nodes) — saved to DB")
     return flow_def
 
 
 @router.delete("/flows/{flow_id}", status_code=204)
-async def delete_flow(flow_id: str) -> None:
-    """Remove a custom flow. Built-in flows cannot be deleted."""
+async def delete_flow(
+    flow_id: str,
+    db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(_oauth2_optional),
+) -> None:
+    """Remove a custom flow from memory and DB. Only the owner can delete it."""
+    from app.models import CustomFlow
+
     built_in = {"flow_basic", "flow_standard", "flow_advanced", "flow_field_visit"}
     if flow_id in built_in:
         raise HTTPException(status_code=400, detail="Cannot delete a built-in flow")
     if flow_id not in FLOWS:
         raise HTTPException(status_code=404, detail=f"Flow '{flow_id}' not found")
+
+    user_id = _user_id_from_token(token)
+    if user_id:
+        row = (await db.execute(select(CustomFlow).where(CustomFlow.id == flow_id))).scalar_one_or_none()
+        if row and row.created_by and row.created_by != user_id:
+            raise HTTPException(status_code=403, detail="You can only delete your own flows")
+
+    # Remove from DB
+    existing = await db.execute(select(CustomFlow).where(CustomFlow.id == flow_id))
+    db_row = existing.scalar_one_or_none()
+    if db_row:
+        await db.delete(db_row)
+        await db.flush()
+
     del FLOWS[flow_id]
-    logger.info(f"[Flows] Deleted custom flow '{flow_id}'")
+    logger.info(f"[Flows] Deleted custom flow '{flow_id}' from memory and DB")
 
 
 # ─────────────────────────── WebSocket Handler ───────────────────────────

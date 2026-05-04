@@ -5,11 +5,14 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import AuthGuard from './AuthGuard';
 
-const AUTH_PATHS = ['/login', '/signup'];
+const AUTH_EXACT = ['/'];
+const AUTH_PREFIX = ['/login', '/signup'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = AUTH_PATHS.some(p => pathname.startsWith(p));
+  const isAuthPage =
+    AUTH_EXACT.includes(pathname) ||
+    AUTH_PREFIX.some(p => pathname.startsWith(p));
 
   if (isAuthPage) {
     return <>{children}</>;
