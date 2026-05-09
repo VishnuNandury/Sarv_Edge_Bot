@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Clock, User, Bot, GitBranch, IndianRupee, FileText, Phone, CheckCircle2, AlertCircle } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { conversationsApi } from '@/lib/api';
@@ -47,10 +47,18 @@ const NODE_FLOW = ['Greeting', 'Identity Verification', 'Overdue Information', '
 
 export default function ConversationDetailContent({ id: propId }: { id: string }) {
   const router = useRouter();
-  const params = useParams();
-  // useParams() reads the real UUID from the browser URL — critical for static export
-  // where the pre-rendered HTML has params.id = "placeholder"
-  const id = (params?.id as string) || propId;
+
+  // useParams() returns "placeholder" because Next.js reads route params from the
+  // RSC payload (which hardcodes id="placeholder" for the static prerender).
+  // Read the real UUID directly from the browser URL instead.
+  const [id] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const m = window.location.pathname.match(/\/conversations\/([^/]+)/);
+      const urlId = m?.[1];
+      if (urlId && urlId !== 'placeholder') return urlId;
+    }
+    return propId;
+  });
 
   const [session, setSession] = useState<(CallSession & { customer_name: string; customer_phone: string }) | null>(null);
   const [transcript, setTranscript] = useState<Transcript[]>([]);

@@ -1,0 +1,292 @@
+2026-05-09 18:27:47,345 [INFO] app.api.voice: [Voice] Created session 9befc101-7a02-445f-b213-5b8f352bb80b for customer Rajesh Kumar (sarvam)
+INFO:     172.17.0.1:43686 - "POST /api/voice/sessions HTTP/1.1" 201 Created
+2026-05-09 18:27:53.660 | DEBUG    | pipecat.transports.smallwebrtc.connection:_initialize:281 - Initializing new peer connection
+2026-05-09 18:27:53.664 | DEBUG    | pipecat.transports.smallwebrtc.connection:_create_answer:368 - Creating answer
+2026-05-09 18:27:53.664 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_track:350 - Track audio received
+2026-05-09 18:27:53.665 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_icegatheringstatechange:346 - ICE gathering state is gathering
+2026-05-09 18:27:53,738 [INFO] aioice.turn: TURN allocation created ('178.156.179.144', 53740) (expires in 600 seconds)
+2026-05-09 18:27:53.738 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_icegatheringstatechange:346 - ICE gathering state is complete
+2026-05-09 18:27:53.739 | DEBUG    | pipecat.transports.smallwebrtc.connection:_create_answer:371 - Setting the answer after the local description is created
+2026-05-09 18:27:53.749 | INFO     | pipecat.services.sarvam.stt:__init__:329 - Sarvam STT initialized with SDK headers: {'User-Agent': 'Pipecat/0.0.108 Python/3.11.15'}
+2026-05-09 18:27:53.750 | DEBUG    | pipecat.services.groq.llm:create_client:85 - Creating Groq client with api https://api.groq.com/openai/v1
+2026-05-09 18:27:53,759 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] LLM: Groq llama-3.3-70b-versatile
+2026-05-09 18:27:53.760 | DEBUG    | pipecat.audio.turn.smart_turn.local_smart_turn_v3:__init__:70 - Loading Local Smart Turn v3.x model from /usr/local/lib/python3.11/site-packages/pipecat/audio/turn/smart_turn/data/smart-turn-v3.2-cpu.onnx...
+2026-05-09 18:27:53.820 | DEBUG    | pipecat.audio.turn.smart_turn.local_smart_turn_v3:__init__:81 - Loaded Local Smart Turn v3.x
+2026-05-09 18:27:53.820 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking Pipeline#0::Source -> SmallWebRTCInputTransport#0
+2026-05-09 18:27:53.820 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking SmallWebRTCInputTransport#0 -> SarvamSTTService#0
+2026-05-09 18:27:53.820 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking SarvamSTTService#0 -> LLMUserAggregator#0
+2026-05-09 18:27:53.821 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking LLMUserAggregator#0 -> GroqLLMService#0
+2026-05-09 18:27:53.821 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking GroqLLMService#0 -> SarvamTTSService#0
+2026-05-09 18:27:53.821 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking SarvamTTSService#0 -> SmallWebRTCOutputTransport#0
+2026-05-09 18:27:53.821 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking SmallWebRTCOutputTransport#0 -> LLMAssistantAggregator#0
+2026-05-09 18:27:53.821 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking LLMAssistantAggregator#0 -> Pipeline#0::Sink
+/usr/local/lib/python3.11/site-packages/pipecat/pipeline/task.py:285: DeprecationWarning: Field 'observers' is deprecated, use the 'observers' parameter instead.
+  warnings.warn(
+2026-05-09 18:27:53.823 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking PipelineTask#0::Source -> RTVIProcessor#0
+2026-05-09 18:27:53.823 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking RTVIProcessor#0 -> Pipeline#0
+2026-05-09 18:27:53.823 | DEBUG    | pipecat.processors.frame_processor:link:589 - Linking Pipeline#0 -> PipelineTask#0::Sink
+2026-05-09 18:27:53,825 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('172.23.224.1', 63837)) State.FROZEN -> State.WAITING
+2026-05-09 18:27:53,825 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('192.168.0.151', 63838)) State.FROZEN -> State.WAITING
+2026-05-09 18:27:53,825 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('172.23.224.1', 63837)) State.FROZEN -> State.WAITING
+2026-05-09 18:27:53.825 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_iceconnectionstatechange:340 - ICE connection state is checking, connection is connecting
+2026-05-09 18:27:53.825 | DEBUG    | pipecat.transports.smallwebrtc.connection:_monitoring_connecting_state:541 - Monitoring connecting state
+2026-05-09 18:27:53.825 | DEBUG    | pipecat.transports.smallwebrtc.connection:_handle_new_connection_state:617 - Connection state changed to: connecting
+2026-05-09 18:27:53,825 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('172.23.224.1', 63837)) State.WAITING -> State.IN_PROGRESS
+2026-05-09 18:27:53.826 | DEBUG    | pipecat.pipeline.task:_wait_for_pipeline_start:745 - PipelineTask#0: Starting. Waiting for StartFrame#0 to reach the end of the pipeline...
+INFO:     172.17.0.1:37128 - "POST /api/voice/sessions/9befc101-7a02-445f-b213-5b8f352bb80b/offer HTTP/1.1" 200 OK
+2026-05-09 18:27:53.828 | INFO     | pipecat.transports.smallwebrtc.transport:connect:462 - Connecting to Small WebRTC
+2026-05-09 18:27:53.828 | DEBUG    | pipecat.services.sarvam.stt:_connect:517 - Connecting to Sarvam
+2026-05-09 18:27:53,845 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('192.168.0.151', 63838)) State.WAITING -> State.IN_PROGRESS
+2026-05-09 18:27:53,865 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('172.23.224.1', 63837)) State.WAITING -> State.IN_PROGRESS
+2026-05-09 18:27:53,884 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('5.78.107.235', 42071)) State.FROZEN -> State.IN_PROGRESS
+2026-05-09 18:27:53,885 [ERROR] asyncio: Task exception was never retrieved
+future: <Task finished name='Task-416' coro=<TurnClientMixin.send_data() done, defined at /usr/local/lib/python3.11/site-packages/aioice/turn.py:262> exception=TransactionFailed(Message(message_method=Method.CHANNEL_BIND, message_class=Class.ERROR, transaction_id=b'}\x04\x84<X\xb3+\x95\xc0\x1f\x06\xca'))>
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 281, in send_data
+    await self.channel_bind(channel, addr)
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 102, in channel_bind
+    await self.request_with_retry(request)
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 234, in request_with_retry
+    response, addr = await self.request(request)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 221, in request
+    return await transaction.run()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/aioice/stun.py", line 323, in run
+    return await self.__future
+           ^^^^^^^^^^^^^^^^^^^
+aioice.stun.TransactionFailed: STUN transaction failed (401 - )
+2026-05-09 18:27:53,905 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('192.168.0.151', 63838)) State.FROZEN -> State.IN_PROGRESS
+2026-05-09 18:27:53,925 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('5.78.107.235', 42071)) State.FROZEN -> State.IN_PROGRESS
+2026-05-09 18:27:53,926 [ERROR] asyncio: Task exception was never retrieved
+future: <Task finished name='Task-419' coro=<TurnClientMixin.send_data() done, defined at /usr/local/lib/python3.11/site-packages/aioice/turn.py:262> exception=TransactionFailed(Message(message_method=Method.CHANNEL_BIND, message_class=Class.ERROR, transaction_id=b'\x8fc\xf4S\x01\xd1t\x01|\x1b\xbc\xb9'))>
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 281, in send_data
+    await self.channel_bind(channel, addr)
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 102, in channel_bind
+    await self.request_with_retry(request)
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 234, in request_with_retry
+    response, addr = await self.request(request)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/aioice/turn.py", line 221, in request
+    return await transaction.run()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/aioice/stun.py", line 323, in run
+    return await self.__future
+           ^^^^^^^^^^^^^^^^^^^
+aioice.stun.TransactionFailed: STUN transaction failed (401 - )
+2026-05-09 18:27:53,946 [INFO] aioice.turn: TURN channel bound 16386 ('5.78.107.235', 42071)
+2026-05-09 18:27:53,946 [INFO] aioice.ice: Connection(0) Check CandidatePair(('172.17.0.2', 50888) -> ('5.78.107.235', 28622)) State.FROZEN -> State.IN_PROGRESS
+2026-05-09 18:27:53,967 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('5.78.107.235', 28622)) State.FROZEN -> State.IN_PROGRESS
+2026-05-09 18:27:53,988 [INFO] aioice.turn: TURN channel bound 16387 ('5.78.107.235', 28622)
+INFO:     ('172.17.0.1', 37138) - "WebSocket /ws/voice/9befc101-7a02-445f-b213-5b8f352bb80b" [accepted]
+2026-05-09 18:27:54,054 [INFO] app.api.voice: [WS] Client connected to session 9befc101-7a02-445f-b213-5b8f352bb80b
+INFO:     connection open
+2026-05-09 18:27:54,093 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('5.78.107.235', 42071)) State.IN_PROGRESS -> State.SUCCEEDED
+2026-05-09 18:27:54,132 [INFO] aioice.ice: Connection(0) ICE completed
+2026-05-09 18:27:54,133 [INFO] aioice.ice: Connection(0) Check CandidatePair(('178.156.179.144', 53740) -> ('5.78.107.235', 28622)) State.IN_PROGRESS -> State.SUCCEEDED
+2026-05-09 18:27:54.150 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_iceconnectionstatechange:340 - ICE connection state is completed, connection is connecting
+2026-05-09 18:27:54.440 | DEBUG    | pipecat.transports.smallwebrtc.connection:_cancel_monitoring_connecting_state:561 - Cancelling the connecting timeout task
+2026-05-09 18:27:54.440 | DEBUG    | pipecat.transports.smallwebrtc.connection:_handle_new_connection_state:617 - Connection state changed to: connected
+2026-05-09 18:27:54.441 | DEBUG    | pipecat.transports.smallwebrtc.transport:on_connected:253 - Peer connection established.
+2026-05-09 18:27:54.441 | WARNING  | pipecat.transports.smallwebrtc.connection:video_input_track:680 - No video transceiver is available
+2026-05-09 18:27:54.441 | WARNING  | pipecat.transports.smallwebrtc.connection:screen_video_input_track:702 - No screen video transceiver is available
+2026-05-09 18:27:54.441 | DEBUG    | pipecat.transports.smallwebrtc.connection:replace_audio_track:456 - Replacing audio track audio
+2026-05-09 18:27:54,441 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Client connected
+2026-05-09 18:27:54.734 | INFO     | pipecat.services.sarvam.stt:_connect:616 - Connected to Sarvam successfully
+2026-05-09 18:27:55.617 | DEBUG    | pipecat.services.sarvam.tts:_connect_websocket:1086 - Connected to Sarvam TTS Websocket
+2026-05-09 18:27:55.617 | DEBUG    | pipecat.services.sarvam.tts:_send_config:1120 - Config being sent is {'target_language_code': 'hi-IN', 'speaker': 'priya', 'speech_sample_rate': '24000', 'enable_preprocessing': True, 'min_buffer_size': 30, 'max_chunk_length': 400, 'output_audio_codec': 'linear16', 'output_audio_bitrate': '128k', 'pace': 1.0, 'model': 'bulbul:v3'}
+2026-05-09 18:27:55.618 | DEBUG    | pipecat.services.sarvam.tts:_send_config:1125 - Configuration sent successfully
+2026-05-09 18:27:55.628 | DEBUG    | pipecat.pipeline.task:_wait_for_pipeline_start:748 - PipelineTask#0: StartFrame#0 reached the end of the pipeline, pipeline is now ready.
+2026-05-09 18:27:55.629 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamSTTService#0] TTFB: 0.0s at 1.802s
+2026-05-09 18:27:55.629 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamSTTService#0] PROCESSING TIME: 0.0s at 1.802s
+2026-05-09 18:27:55.629 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [GroqLLMService#0] TTFB: 0.0s at 1.802s
+2026-05-09 18:27:55.629 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [GroqLLMService#0] PROCESSING TIME: 0.0s at 1.802s
+2026-05-09 18:27:55.629 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamTTSService#0] TTFB: 0.0s at 1.802s
+2026-05-09 18:27:55.630 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME: 0.0s at 1.802s
+2026-05-09 18:27:55.635 | DEBUG    | pipecat.services.openai.base_llm:_stream_chat_completions_universal_context:430 - GroqLLMService#0: Generating chat from universal context [{'role': 'system', 'content': "YOUR ONLY TASK: ग्राहक को गर्मजोशी से नमस्कार करें, अपना परिचय दें और बताएं यह एक automated call है। उदाहरण: 'नमस्ते Rajesh Kumarजी, मैं Company की तरफ से बोल रही हूँ। आपके account से जुड़ी एक recent visit के बारे में confirm करना था। आशा है आप ठीक हैं।'\n\nSTRICT RULES:\n- Ask ONLY the question above. Stop after the question mark.\n- Do NOT add follow-up questions, comments, or extra sentences.\n- Do NOT ask about anything not specified above.\nRole: Hindi loan collection agent, empathetic, professional, never threaten.\nCustomer: Rajesh Kumar, Rs.45000.0 overdue, 15 DPD.\nFormat: 1-2 sentences max. All Hindi in Devanagari. English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."}, {'role': 'user', 'content': '[call connected]'}]
+2026-05-09 18:27:56,521 [INFO] httpx: HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-09 18:27:56.528 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - GroqLLMService#0 TTFB: 0.893s
+2026-05-09 18:27:56.529 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [GroqLLMService#0] TTFB (llama-3.3-70b-versatile): 0.8930778503417969s at 2.702s
+2026-05-09 18:27:56.701 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 257, completion tokens: 58
+2026-05-09 18:27:56.702 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 257, completion tokens: 58
+2026-05-09 18:27:56.702 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 257, completion: 58, total: 315 at 2.88s
+2026-05-09 18:27:56.702 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 257, completion: 58, total: 315 at 2.88s
+2026-05-09 18:27:56.704 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - GroqLLMService#0 processing time: 1.070s
+2026-05-09 18:27:56.705 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [GroqLLMService#0] PROCESSING TIME (llama-3.3-70b-versatile): 1.069800615310669s at 2.879s
+2026-05-09 18:27:56.707 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.11007547378540039
+2026-05-09 18:27:56.707 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [नमस्ते राजेश कुमारजी, मैं कंपनी की तरफ से बोल रही हूँ, यह एक automated call है और आपके loan के बारे में बात करना चाहती हूँ।]
+2026-05-09 18:27:56.708 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 123
+2026-05-09 18:27:56.708 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:27:56.708 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.11007547378540039 at 2.881s
+2026-05-09 18:27:56.708 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 123 characters at 2.882s
+2026-05-09 18:27:56.709 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0008118152618408203s at 2.882s
+2026-05-09 18:27:57.144 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - SarvamTTSService#0 TTFB: 0.437s
+2026-05-09 18:27:57.144 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamTTSService#0] TTFB (bulbul:v3): 0.4366006851196289s at 3.318s
+2026-05-09 18:27:57.146 | DEBUG    | pipecat.transports.base_output:_bot_started_speaking:631 - Bot started speaking
+2026-05-09 18:28:03.153 | DEBUG    | pipecat.services.tts_service:push_frame:829 - SarvamTTSService#0 cleaning up TTS context 152f8c32-4757-401b-81e3-d882742c3294
+2026-05-09 18:28:05.302 | DEBUG    | pipecat.transports.base_output:_handle_frame:725 - Bot stopped speaking based on TTSStoppedFrame
+2026-05-09 18:28:05.302 | DEBUG    | pipecat.transports.base_output:_bot_stopped_speaking:659 - Bot stopped speaking
+2026-05-09 18:28:05,304 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Agent (123 chars): नमस्ते राजेश कुमारजी, मैं कंपनी की तरफ से बोल रही हूँ, यह एक automated call है और आपके loan के बारे में बात करना चाहती हूँ।
+2026-05-09 18:28:05,687 [INFO] app.flows.flow_manager: [FlowManager] Session 9befc101-7a02-445f-b213-5b8f352bb80b: greeting → visit_check
+2026-05-09 18:28:08.362 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='START_SPEECH', occured_at=1778351288.2644153)
+2026-05-09 18:28:08.362 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: START_SPEECH, Occurred at: 1778351288.2644153
+2026-05-09 18:28:08.362 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:687 - User started speaking
+2026-05-09 18:28:08.363 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - SarvamSTTService#0: broadcasting interruption
+2026-05-09 18:28:08.363 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamSTTService#0 processing time: 0.000s
+2026-05-09 18:28:08.363 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamSTTService#0] PROCESSING TIME (saarika:v2.5): 0.0002894401550292969s at 14.537s
+2026-05-09 18:28:08.997 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='END_SPEECH', occured_at=1778351288.899722)
+2026-05-09 18:28:08.997 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: END_SPEECH, Occurred at: 1778351288.899722
+2026-05-09 18:28:08.997 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:693 - User stopped speaking
+2026-05-09 18:28:09.087 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='data' data=SpeechToTextTranscriptionData(request_id='20260509_2e37a7a1-e9c4-4697-a325-ec70c2e53abc', transcript='जी।', timestamps=None, diarized_transcript=None, language_code='hi-IN', language_probability=None, metrics=TranscriptionMetrics(audio_duration=1.248, processing_latency=0.06323075294494629))
+2026-05-09 18:28:09.088 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_started:725 - LLMUserAggregator#0: User started speaking (strategy: TranscriptionUserTurnStartStrategy#0)
+2026-05-09 18:28:09.088 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - LLMUserAggregator#0: broadcasting interruption
+2026-05-09 18:28:10.260 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_stopped:745 - LLMUserAggregator#0: User stopped speaking (strategy: TurnAnalyzerUserTurnStopStrategy#0)
+2026-05-09 18:28:10,261 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Customer: जी।
+2026-05-09 18:28:10.263 | DEBUG    | pipecat.services.openai.base_llm:_stream_chat_completions_universal_context:430 - GroqLLMService#0: Generating chat from universal context [{'role': 'system', 'content': "YOUR ONLY TASK: ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।'\n\nSTRICT RULES:\n- Ask ONLY the question above. Stop after the question mark.\n- Do NOT add follow-up questions, comments, or extra sentences.\n- Do NOT ask about anything not specified above.\nRole: Hindi loan collection agent, empathetic, professional, never threaten.\nCustomer: Rajesh Kumar, Rs.45000.0 overdue, 15 DPD.\nFormat: 1-2 sentences max. All Hindi in Devanagari. English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."}, {'role': 'user', 'content': '[call connected]'}, {'role': 'assistant', 'content': 'नमस्ते राजेश कुमारजी, मैं कंपनी की तरफ से बोल रही हूँ, यह एक automated call है और आपके loan के बारे में बात करना चाहती हूँ।'}, {'role': 'system', 'content': "[NEXT NODE: Visit Check] ONLY say: ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।' Do NOT add any extra questions or sentences."}, {'role': 'user', 'content': 'जी।'}]
+2026-05-09 18:28:10,462 [INFO] httpx: HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-09 18:28:10.463 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - GroqLLMService#0 TTFB: 0.200s
+2026-05-09 18:28:10.463 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [GroqLLMService#0] TTFB (llama-3.3-70b-versatile): 0.20032978057861328s at 16.637s
+2026-05-09 18:28:10.626 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 413, completion tokens: 44
+2026-05-09 18:28:10.626 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 413, completion tokens: 44
+2026-05-09 18:28:10.627 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 413, completion: 44, total: 457 at 16.80s
+2026-05-09 18:28:10.627 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 413, completion: 44, total: 457 at 16.80s
+2026-05-09 18:28:10.634 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.006571054458618164
+2026-05-09 18:28:10.635 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे?]
+2026-05-09 18:28:10.635 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 48
+2026-05-09 18:28:10.636 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:10.636 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - GroqLLMService#0 processing time: 0.374s
+2026-05-09 18:28:10.637 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.006571054458618164 at 16.809s
+2026-05-09 18:28:10.637 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 48 characters at 16.810s
+2026-05-09 18:28:10.637 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0009768009185791016s at 16.810s
+2026-05-09 18:28:10.637 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [GroqLLMService#0] PROCESSING TIME (llama-3.3-70b-versatile): 0.3736710548400879s at 16.810s
+2026-05-09 18:28:10.643 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.00696110725402832
+2026-05-09 18:28:10.643 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [कृपया हाँ या नहीं में बताएं।]
+2026-05-09 18:28:10.644 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 28
+2026-05-09 18:28:10.644 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:10.644 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.00696110725402832 at 16.817s
+2026-05-09 18:28:10.644 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 28 characters at 16.818s
+2026-05-09 18:28:10.645 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.000743865966796875s at 16.818s
+2026-05-09 18:28:11.068 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - SarvamTTSService#0 TTFB: 0.433s
+2026-05-09 18:28:11.068 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamTTSService#0] TTFB (bulbul:v3): 0.4329843521118164s at 17.242s
+2026-05-09 18:28:11.070 | DEBUG    | pipecat.transports.base_output:_bot_started_speaking:631 - Bot started speaking
+2026-05-09 18:28:15.948 | DEBUG    | pipecat.services.tts_service:push_frame:829 - SarvamTTSService#0 cleaning up TTS context 03e285c2-162b-49fd-a1d6-49cef94447d9
+2026-05-09 18:28:16.181 | DEBUG    | pipecat.transports.base_output:_handle_frame:725 - Bot stopped speaking based on TTSStoppedFrame
+2026-05-09 18:28:16.182 | DEBUG    | pipecat.transports.base_output:_bot_stopped_speaking:659 - Bot stopped speaking
+2026-05-09 18:28:16,184 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Agent (77 chars): क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।
+2026-05-09 18:28:18.596 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='START_SPEECH', occured_at=1778351298.4988356)
+2026-05-09 18:28:18.597 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: START_SPEECH, Occurred at: 1778351298.4988356
+2026-05-09 18:28:18.597 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:687 - User started speaking
+2026-05-09 18:28:18.597 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - SarvamSTTService#0: broadcasting interruption
+2026-05-09 18:28:18.597 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamSTTService#0 processing time: 0.000s
+2026-05-09 18:28:18.597 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamSTTService#0] PROCESSING TIME (saarika:v2.5): 0.00026154518127441406s at 24.771s
+2026-05-09 18:28:19.797 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='END_SPEECH', occured_at=1778351299.6995256)
+2026-05-09 18:28:19.797 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: END_SPEECH, Occurred at: 1778351299.6995256
+2026-05-09 18:28:19.797 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:693 - User stopped speaking
+2026-05-09 18:28:19.914 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='data' data=SpeechToTextTranscriptionData(request_id='20260509_2e37a7a1-e9c4-4697-a325-ec70c2e53abc', transcript='हां जी, आई थिंक।', timestamps=None, diarized_transcript=None, language_code='hi-IN', language_probability=None, metrics=TranscriptionMetrics(audio_duration=1.632, processing_latency=0.09392452239990234))
+2026-05-09 18:28:19.915 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_started:725 - LLMUserAggregator#0: User started speaking (strategy: TranscriptionUserTurnStartStrategy#0)
+2026-05-09 18:28:19.916 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - LLMUserAggregator#0: broadcasting interruption
+2026-05-09 18:28:21.086 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_stopped:745 - LLMUserAggregator#0: User stopped speaking (strategy: TurnAnalyzerUserTurnStopStrategy#0)
+2026-05-09 18:28:21,087 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Customer: हां जी, आई थिंक।
+2026-05-09 18:28:21.088 | DEBUG    | pipecat.services.openai.base_llm:_stream_chat_completions_universal_context:430 - GroqLLMService#0: Generating chat from universal context [{'role': 'system', 'content': "YOUR ONLY TASK: ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।'\n\nSTRICT RULES:\n- Ask ONLY the question above. Stop after the question mark.\n- Do NOT add follow-up questions, comments, or extra sentences.\n- Do NOT ask about anything not specified above.\nRole: Hindi loan collection agent, empathetic, professional, never threaten.\nCustomer: Rajesh Kumar, Rs.45000.0 overdue, 15 DPD.\nFormat: 1-2 sentences max. All Hindi in Devanagari. English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."}, {'role': 'user', 'content': '[call connected]'}, {'role': 'assistant', 'content': 'नमस्ते राजेश कुमारजी, मैं कंपनी की तरफ से बोल रही हूँ, यह एक automated call है और आपके loan के बारे में बात करना चाहती हूँ।'}, {'role': 'system', 'content': "[NEXT NODE: Visit Check] ONLY say: ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।' Do NOT add any extra questions or sentences."}, {'role': 'user', 'content': 'जी।'}, {'role': 'assistant', 'content': 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।'}, {'role': 'user', 'content': 'हां जी, आई थिंक।'}]
+2026-05-09 18:28:21,181 [INFO] httpx: HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-09 18:28:21.182 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - GroqLLMService#0 TTFB: 0.094s
+2026-05-09 18:28:21.183 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [GroqLLMService#0] TTFB (llama-3.3-70b-versatile): 0.09378886222839355s at 27.356s
+2026-05-09 18:28:21.259 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.04903364181518555
+2026-05-09 18:28:21.260 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे?]
+2026-05-09 18:28:21.260 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 48
+2026-05-09 18:28:21.260 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:21.261 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.04903364181518555 at 27.434s
+2026-05-09 18:28:21.261 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 48 characters at 27.434s
+2026-05-09 18:28:21.261 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0005080699920654297s at 27.434s
+2026-05-09 18:28:21.285 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 475, completion tokens: 44
+2026-05-09 18:28:21.286 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 475, completion tokens: 44
+2026-05-09 18:28:21.286 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 475, completion: 44, total: 519 at 27.46s
+2026-05-09 18:28:21.286 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 475, completion: 44, total: 519 at 27.46s
+2026-05-09 18:28:21.287 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - GroqLLMService#0 processing time: 0.199s
+2026-05-09 18:28:21.288 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [GroqLLMService#0] PROCESSING TIME (llama-3.3-70b-versatile): 0.19928669929504395s at 27.462s
+2026-05-09 18:28:21.289 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.029109477996826172
+2026-05-09 18:28:21.290 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [कृपया हाँ या नहीं में बताएं।]
+2026-05-09 18:28:21.290 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 28
+2026-05-09 18:28:21.290 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:21.290 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.029109477996826172 at 27.464s
+2026-05-09 18:28:21.291 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 28 characters at 27.464s
+2026-05-09 18:28:21.291 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0005331039428710938s at 27.464s
+2026-05-09 18:28:21,408 [INFO] app.flows.flow_manager: [FlowManager] Session 9befc101-7a02-445f-b213-5b8f352bb80b: visit_check → payment_check
+2026-05-09 18:28:21.958 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - SarvamTTSService#0 TTFB: 0.699s
+2026-05-09 18:28:21.959 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamTTSService#0] TTFB (bulbul:v3): 0.698523759841919s at 28.133s
+2026-05-09 18:28:21.960 | DEBUG    | pipecat.transports.base_output:_bot_started_speaking:631 - Bot started speaking
+2026-05-09 18:28:26.825 | DEBUG    | pipecat.services.tts_service:push_frame:829 - SarvamTTSService#0 cleaning up TTS context 9e7a2155-528b-4b92-a1d7-1efff510e816
+2026-05-09 18:28:27.152 | DEBUG    | pipecat.transports.base_output:_handle_frame:725 - Bot stopped speaking based on TTSStoppedFrame
+2026-05-09 18:28:27.152 | DEBUG    | pipecat.transports.base_output:_bot_stopped_speaking:659 - Bot stopped speaking
+2026-05-09 18:28:27,154 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Agent (77 chars): क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।
+2026-05-09 18:28:30.070 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='START_SPEECH', occured_at=1778351309.9722548)
+2026-05-09 18:28:30.070 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: START_SPEECH, Occurred at: 1778351309.9722548
+2026-05-09 18:28:30.070 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:687 - User started speaking
+2026-05-09 18:28:30.070 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - SarvamSTTService#0: broadcasting interruption
+2026-05-09 18:28:30.070 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamSTTService#0 processing time: 0.000s
+2026-05-09 18:28:30.071 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamSTTService#0] PROCESSING TIME (saarika:v2.5): 0.0002880096435546875s at 36.245s
+2026-05-09 18:28:31.319 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='events' data=EventsData(event_type=None, timestamp=None, signal_type='END_SPEECH', occured_at=1778351311.2219472)
+2026-05-09 18:28:31.319 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:683 - VAD Signal: END_SPEECH, Occurred at: 1778351311.2219472
+2026-05-09 18:28:31.319 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:693 - User stopped speaking
+2026-05-09 18:28:31.449 | DEBUG    | pipecat.services.sarvam.stt:_handle_message:676 - Received response: type='data' data=SpeechToTextTranscriptionData(request_id='20260509_2e37a7a1-e9c4-4697-a325-ec70c2e53abc', transcript='हां जी, आए थे।', timestamps=None, diarized_transcript=None, language_code='hi-IN', language_probability=None, metrics=TranscriptionMetrics(audio_duration=1.664, processing_latency=0.08721351623535156))
+2026-05-09 18:28:31.450 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_started:725 - LLMUserAggregator#0: User started speaking (strategy: TranscriptionUserTurnStartStrategy#0)
+2026-05-09 18:28:31.450 | DEBUG    | pipecat.processors.frame_processor:broadcast_interruption:765 - LLMUserAggregator#0: broadcasting interruption
+2026-05-09 18:28:32.621 | DEBUG    | pipecat.processors.aggregators.llm_response_universal:_on_user_turn_stopped:745 - LLMUserAggregator#0: User stopped speaking (strategy: TurnAnalyzerUserTurnStopStrategy#0)
+2026-05-09 18:28:32,622 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Customer: हां जी, आए थे।
+2026-05-09 18:28:32.624 | DEBUG    | pipecat.services.openai.base_llm:_stream_chat_completions_universal_context:430 - GroqLLMService#0: Generating chat from universal context [{'role': 'system', 'content': "YOUR ONLY TASK: ग्राहक ने visit confirm की। अब पूछें कि क्या उस visit के दौरान या बाद में कोई payment हुई। उदाहरण: 'शुक्रिया। क्या आपने उस visit के दौरान या उसके बाद कोई payment की? कृपया हाँ या नहीं में बताएं।'\n\nSTRICT RULES:\n- Ask ONLY the question above. Stop after the question mark.\n- Do NOT add follow-up questions, comments, or extra sentences.\n- Do NOT ask about anything not specified above.\nRole: Hindi loan collection agent, empathetic, professional, never threaten.\nCustomer: Rajesh Kumar, Rs.45000.0 overdue, 15 DPD.\nFormat: 1-2 sentences max. All Hindi in Devanagari. English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."}, {'role': 'user', 'content': '[call connected]'}, {'role': 'assistant', 'content': 'नमस्ते राजेश कुमारजी, मैं कंपनी की तरफ से बोल रही हूँ, यह एक automated call है और आपके loan के बारे में बात करना चाहती हूँ।'}, {'role': 'system', 'content': "[NEXT NODE: Visit Check] ONLY say: ग्राहक से पूछें कि क्या हाल ही में हमारे कर्मचारी उनसे मिलने आए थे। उदाहरण: 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।' Do NOT add any extra questions or sentences."}, {'role': 'user', 'content': 'जी।'}, {'role': 'assistant', 'content': 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।'}, {'role': 'user', 'content': 'हां जी, आई थिंक।'}, {'role': 'system', 'content': "[NEXT NODE: Payment Check] ONLY say: ग्राहक ने visit confirm की। अब पूछें कि क्या उस visit के दौरान या बाद में कोई payment हुई। उदाहरण: 'शुक्रिया। क्या आपने उस visit के दौरान या उसके बाद कोई payment की? कृपया हाँ या नहीं में बताएं।' Do NOT add any extra questions or sentences."}, {'role': 'assistant', 'content': 'क्या हाल ही में हमारे कर्मचारी आपसे मिलने आए थे? कृपया हाँ या नहीं में बताएं।'}, {'role': 'user', 'content': 'हां जी, आए थे।'}]
+2026-05-09 18:28:32,826 [INFO] httpx: HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-09 18:28:32.827 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - GroqLLMService#0 TTFB: 0.203s
+2026-05-09 18:28:32.828 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [GroqLLMService#0] TTFB (llama-3.3-70b-versatile): 0.20343351364135742s at 39.002s
+2026-05-09 18:28:32.871 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.010409355163574219
+2026-05-09 18:28:32.871 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [शुक्रिया।]
+2026-05-09 18:28:32.872 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 9
+2026-05-09 18:28:32.872 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:32.872 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.010409355163574219 at 39.045s
+2026-05-09 18:28:32.872 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 9 characters at 39.046s
+2026-05-09 18:28:32.872 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0008487701416015625s at 39.046s
+2026-05-09 18:28:32,944 [INFO] app.flows.flow_manager: [FlowManager] Session 9befc101-7a02-445f-b213-5b8f352bb80b: payment_check → payment_amount
+2026-05-09 18:28:33.040 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 649, completion tokens: 48
+2026-05-09 18:28:33.040 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_llm_usage_metrics:196 - GroqLLMService#0 prompt tokens: 649, completion tokens: 48
+2026-05-09 18:28:33.041 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 649, completion: 48, total: 697 at 39.21s
+2026-05-09 18:28:33.041 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_llm_usage:202 - 📊 [GroqLLMService#0] LLM TOKEN USAGE (llama-3.3-70b-versatile): prompt: 649, completion: 48, total: 697 at 39.21s
+2026-05-09 18:28:33.049 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.1727309226989746
+2026-05-09 18:28:33.049 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [क्या आपने उस visit के दौरान या उसके बाद कोई payment की?]
+2026-05-09 18:28:33.050 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 55
+2026-05-09 18:28:33.050 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.000s
+2026-05-09 18:28:33.050 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - GroqLLMService#0 processing time: 0.427s
+2026-05-09 18:28:33.051 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.1727309226989746 at 39.223s
+2026-05-09 18:28:33.051 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 55 characters at 39.224s
+2026-05-09 18:28:33.051 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0004787445068359375s at 39.224s
+2026-05-09 18:28:33.051 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [GroqLLMService#0] PROCESSING TIME (llama-3.3-70b-versatile): 0.4269239902496338s at 39.225s
+2026-05-09 18:28:33.056 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_text_aggregation_metrics:231 - SarvamTTSService#0 text aggregation time: 0.006372690200805664
+2026-05-09 18:28:33.057 | DEBUG    | pipecat.services.sarvam.tts:run_tts:1206 - Generating TTS: [कृपया हाँ या नहीं में बताएं।]
+2026-05-09 18:28:33.057 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:start_tts_usage_metrics:214 - SarvamTTSService#0 usage characters: 28
+2026-05-09 18:28:33.057 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_processing_metrics:175 - SarvamTTSService#0 processing time: 0.001s
+2026-05-09 18:28:33.058 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:163 - 📊 [SarvamTTSService#0] METRICS (bulbul:v3): processor='SarvamTTSService#0' model='bulbul:v3' value=0.006372690200805664 at 39.231s
+2026-05-09 18:28:33.058 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:156 - 📊 [SarvamTTSService#0] TTS USAGE (bulbul:v3): 28 characters at 39.231s
+2026-05-09 18:28:33.058 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:150 - 📊 [SarvamTTSService#0] PROCESSING TIME (bulbul:v3): 0.0006160736083984375s at 39.232s
+2026-05-09 18:28:33.483 | DEBUG    | pipecat.processors.metrics.frame_processor_metrics:stop_ttfb_metrics:143 - SarvamTTSService#0 TTFB: 0.612s
+2026-05-09 18:28:33.484 | DEBUG    | pipecat.observers.loggers.metrics_log_observer:_log_metrics_data:146 - 📊 [SarvamTTSService#0] TTFB (bulbul:v3): 0.6124165058135986s at 39.658s
+2026-05-09 18:28:33.485 | DEBUG    | pipecat.transports.base_output:_bot_started_speaking:631 - Bot started speaking
+2026-05-09 18:28:38.968 | DEBUG    | pipecat.services.tts_service:push_frame:829 - SarvamTTSService#0 cleaning up TTS context 52840411-93f3-47ae-893e-62474daa5144
+2026-05-09 18:28:40.241 | DEBUG    | pipecat.transports.base_output:_handle_frame:725 - Bot stopped speaking based on TTSStoppedFrame
+2026-05-09 18:28:40.242 | DEBUG    | pipecat.transports.base_output:_bot_stopped_speaking:659 - Bot stopped speaking
+2026-05-09 18:28:40,244 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Agent (94 chars): शुक्रिया। क्या आपने उस visit के दौरान या उसके बाद कोई payment की? कृपया हाँ या नहीं में बताएं।
+2026-05-09 18:28:42.461 | DEBUG    | pipecat.pipeline.task:_wait_for_pipeline_end:767 - PipelineTask#0: Closing. Waiting for EndFrame#0(reason: None) to reach the end of the pipeline...
+2026-05-09 18:28:42.690 | DEBUG    | pipecat.services.sarvam.stt:_disconnect:650 - Disconnected from Sarvam WebSocket
+2026-05-09 18:28:42.691 | DEBUG    | pipecat.services.sarvam.tts:_disconnect_websocket:1136 - Disconnecting from Sarvam
+INFO:     172.17.0.1:40418 - "POST /api/voice/sessions/9befc101-7a02-445f-b213-5b8f352bb80b/end HTTP/1.1" 200 OK
+INFO:     connection closed
+2026-05-09 18:28:43,395 [INFO] app.api.voice: [WS] Connection closed for session 9befc101-7a02-445f-b213-5b8f352bb80b
+2026-05-09 18:28:43.441 | DEBUG    | pipecat.transports.smallwebrtc.connection:on_iceconnectionstatechange:340 - ICE connection state is closed, connection is closed
+2026-05-09 18:28:43.441 | DEBUG    | pipecat.transports.smallwebrtc.connection:_handle_new_connection_state:617 - Connection state changed to: closed
+2026-05-09 18:28:43.441 | DEBUG    | pipecat.transports.smallwebrtc.transport:on_closed:263 - Client connection closed.
+2026-05-09 18:28:43,442 [INFO] app.pipelines.sarvam_pipecat_pipeline: [SarvamPipecat:9befc101-7a02-445f-b213-5b8f352bb80b] Client disconnected
+2026-05-09 18:28:43,463 [INFO] aioice.turn: TURN allocation deleted ('178.156.179.144', 53740)
+2026-05-09 18:28:44.448 | DEBUG    | pipecat.transports.smallwebrtc.connection:_idle_watcher:174 - Disabling receiver for audio track after 2.00s idle
+2026-05-09 18:28:44.448 | DEBUG    | pipecat.transports.smallwebrtc.connection:discard_old_frames:143 - Discarding old frames
+INFO:     172.17.0.1:40428 - "GET /api/conversations?search=&page=1&limit=20 HTTP/1.1" 200 OK
+INFO:     172.17.0.1:40156 - "GET /conversations/9befc101-7a02-445f-b213-5b8f352bb80b/index.txt?_rsc=1s00v HTTP/1.1" 200 OK
+INFO:     172.17.0.1:40162 - "GET /_next/static/chunks/app/conversations/%5Bid%5D/page-3ea0ed2599f4d2fe.js HTTP/1.1" 200 OK
+INFO:     172.17.0.1:57714 - "GET /api/conversations?search=&page=1&limit=20 HTTP/1.1" 200 OK

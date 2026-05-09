@@ -468,26 +468,29 @@ class SarvamPipecatPipeline:
             self.turn_index += 1
             text = getattr(message, "content", str(message))
             logger.info(f"[SarvamPipecat:{self.session_id}] Customer: {text}")
-            await self._save_transcript("customer", text)
-            await self._emit_transcript("customer", text, 0)
 
+            # ── Context mutation MUST happen before any await ─────────────
+            # Pipecat triggers the LLM call at the first event-loop yield
+            # (the await below). Any context changes made after that await
+            # are too late — the LLM already snapshotted the messages.
             old_node_id = self.flow_manager.current_node_id
             current_node_type = self.flow_manager.current_node.type
             transitioned = self.flow_manager.process_customer_response(text)
 
-            # For single-edge action/end-adjacent nodes, advance after the customer
-            # responds — not in on_assistant_turn_stopped, which fires before the
-            # customer has had a chance to answer the node's question.
-            # Start-type nodes (greeting) auto-advance in on_assistant_turn_stopped.
             if not transitioned and current_node_type not in ('start', 'end'):
                 target = self.flow_manager.process_single_edge_transition()
                 if target:
                     transitioned = target
 
-            # On any transition, inject a strict reinforcement message so the LLM
-            # asks only what the next node specifies.
             if self.flow_manager.current_node_id != old_node_id:
                 new_node = self.flow_manager.current_node
+                # Remove stale [NEXT NODE:] messages so old reinforcements
+                # don't override the new node's instruction in the LLM context.
+                context.messages[:] = [
+                    m for m in context.messages
+                    if not (m.get("role") == "system"
+                            and m.get("content", "").startswith("[NEXT NODE:"))
+                ]
                 context.messages.append({
                     "role": "system",
                     "content": (
@@ -498,21 +501,26 @@ class SarvamPipecatPipeline:
                 })
 
             _update_system_prompt(self.flow_manager.get_system_prompt())
+            # ── End of synchronous section ────────────────────────────────
+
+            await self._save_transcript("customer", text)
+            await self._emit_transcript("customer", text, 0)
 
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
         async def on_assistant_turn_stopped(aggregator, message):
             text = getattr(message, "content", str(message))
-            logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
-            await self._save_transcript("agent", text)
-            await self._emit_transcript("agent", text, 0)
-            # Only auto-advance start-type nodes (e.g. greeting → visit_check).
-            # Action/decision nodes must wait for the customer to respond first
-            # (handled in on_user_turn_stopped) so we don't skip over them.
+
+            # ── Context mutation before any await (same reason as above) ──
             old_node_id = self.flow_manager.current_node_id
             if self.flow_manager.current_node.type == 'start':
                 target = self.flow_manager.process_single_edge_transition()
                 if target and self.flow_manager.current_node_id != old_node_id:
                     new_node = self.flow_manager.current_node
+                    context.messages[:] = [
+                        m for m in context.messages
+                        if not (m.get("role") == "system"
+                                and m.get("content", "").startswith("[NEXT NODE:"))
+                    ]
                     context.messages.append({
                         "role": "system",
                         "content": (
@@ -522,6 +530,11 @@ class SarvamPipecatPipeline:
                         ),
                     })
                     _update_system_prompt(self.flow_manager.get_system_prompt())
+            # ── End synchronous section ────────────────────────────────────
+
+            logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
+            await self._save_transcript("agent", text)
+            await self._emit_transcript("agent", text, 0)
             # Emit node_change AFTER agent speaks so the visualization reflects
             # what the agent just said, not what the customer triggered.
             await self._emit({
