@@ -131,6 +131,14 @@ export default function VoiceInterface({
       // Add tracks
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
+      // Create data channel BEFORE createOffer so it appears in the SDP.
+      // Pipecat's SmallWebRTC transport requires this channel for app messaging.
+      const dc = pc.createDataChannel('pipecat-audio', { ordered: true });
+      dc.onopen = () => {};
+      dc.onmessage = () => {};
+      // Accept any server-initiated data channels too
+      pc.ondatachannel = (ev) => { ev.channel.onopen = () => {}; ev.channel.onmessage = () => {}; };
+
       // Handle remote audio
       pc.ontrack = (event) => {
         const remoteAudio = new Audio();

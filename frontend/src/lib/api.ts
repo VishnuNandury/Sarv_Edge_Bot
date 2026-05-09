@@ -99,11 +99,11 @@ export const voiceApi = {
   getIceServers: () =>
     api.get<{ iceServers: RTCIceServer[] }>('/api/voice/ice-servers'),
   getFlows: () =>
-    api.get<{ flows: Array<{ id: string; name: string; description: string; tier: string; nodes: unknown[]; edges: unknown[] }> }>('/api/flows'),
+    api.get<{ flows: Array<{ id: string; name: string; description: string; tier: string; nodes: unknown[]; edges: unknown[] }> }>('/api/voice/flows'),
   registerFlow: (flow: { id: string; name: string; description: string; nodes: unknown[]; edges: unknown[] }) =>
-    api.post<{ id: string; name: string }>('/api/flows', flow),
+    api.post<{ id: string; name: string }>('/api/voice/flows', flow),
   deleteFlow: (flowId: string) =>
-    api.delete(`/api/flows/${flowId}`),
+    api.delete(`/api/voice/flows/${flowId}`),
 };
 
 export default api;

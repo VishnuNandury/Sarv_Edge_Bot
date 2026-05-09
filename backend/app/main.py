@@ -209,9 +209,20 @@ if os.path.exists(_static):
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
+    path = str(request.url.path)
+    # Backend paths → JSON 404
+    if any(path.startswith(p) for p in ("/api/", "/ws/", "/docs", "/redoc", "/openapi")):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Resource not found", "path": path},
+        )
+    # All other paths are Next.js frontend routes → serve the SPA shell
+    index = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    if os.path.exists(index):
+        return FileResponse(index)
     return JSONResponse(
         status_code=404,
-        content={"detail": "Resource not found", "path": str(request.url.path)},
+        content={"detail": "Resource not found", "path": path},
     )
 
 

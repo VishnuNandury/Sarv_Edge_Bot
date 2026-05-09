@@ -37,7 +37,8 @@
       "Read(//usr/local/lib/python3.11/site-packages/**)",
       "Bash(python3 -c \"import pipecat; print\\(pipecat.__file__\\)\")",
       "Bash(git -C \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot\" remote -v)",
-      "Bash(Test-Path *)"
+      "Bash(Test-Path *)",
+      "Bash(Get-ChildItem *)"
     ]
   }
 }

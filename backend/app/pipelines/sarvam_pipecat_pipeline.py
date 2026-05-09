@@ -160,7 +160,6 @@ class SarvamPipecatPipeline:
         self.customer_id = customer_id
         self.flow_id = flow_id
         self.customer_context = customer_context
-        self.db = db_session
         self.ws_emit = ws_emit
         self.agent_config = agent_config or {}
         self.voice_id = voice_id
@@ -382,6 +381,7 @@ class SarvamPipecatPipeline:
                 "turn_duration_secs": round(duration, 3),
                 "was_interrupted": was_interrupted,
                 "session_id": self.session_id,
+                **self._metrics.aggregated(),
             })
 
         _metrics_obs = self._metrics._make_observer()
@@ -468,14 +468,25 @@ class SarvamPipecatPipeline:
             await self._save_transcript("customer", text)
             await self._emit_transcript("customer", text, 0)
 
-            # For decision nodes (multiple outgoing edges): detect yes/no and
-            # other intents from the customer's utterance and transition.
+            old_node_id = self.flow_manager.current_node_id
             transitioned = self.flow_manager.process_customer_response(text)
-            # For single-edge action nodes (e.g. capture payment amount): advance
-            # AFTER the customer has responded, not after the agent speaks.
             if not transitioned:
                 self.flow_manager.process_single_edge_transition()
-            # Always refresh the system prompt so the LLM sees the current node.
+
+            # On node transition, inject a reinforcement message directly into the
+            # conversation history so the LLM can't drift to a "natural" next step
+            # based on prior turns — the context message dominates the history.
+            if self.flow_manager.current_node_id != old_node_id:
+                new_node = self.flow_manager.current_node
+                context.messages.append({
+                    "role": "system",
+                    "content": (
+                        f"[MOVED TO: {new_node.label}] "
+                        f"Your immediate next response MUST: "
+                        f"{new_node.system_prompt_snippet[:120]}"
+                    ),
+                })
+
             _update_system_prompt(self.flow_manager.get_system_prompt())
 
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
@@ -519,17 +530,18 @@ class SarvamPipecatPipeline:
         if not self._has_db_record:
             return
         from app.models import Transcript
-        transcript = Transcript(
-            id=str(uuid.uuid4()),
-            session_id=self.session_id,
-            speaker=speaker,
-            text=text,
-            language=self.customer_context.get("preferred_language", "hi"),
-            turn_index=self.turn_index,
-        )
-        self.db.add(transcript)
+        from app.database import AsyncSessionLocal
         try:
-            await self.db.flush()
+            async with AsyncSessionLocal() as db:
+                async with db.begin():
+                    db.add(Transcript(
+                        id=str(uuid.uuid4()),
+                        session_id=self.session_id,
+                        speaker=speaker,
+                        text=text,
+                        language=self.customer_context.get("preferred_language", "hi"),
+                        turn_index=self.turn_index,
+                    ))
         except Exception as e:
             logger.error(f"[SarvamPipecat] Transcript save error: {e}")
 
@@ -554,16 +566,27 @@ class SarvamPipecatPipeline:
             except Exception:
                 pass
 
+        if self._has_db_record:
+            await self._update_session_status(status, outcome)
+            await self._save_metrics()
+
+        # Emit final aggregated metrics BEFORE ended so the frontend receives
+        # them before cleanup() closes the WebSocket.
+        final = self._metrics.aggregated()
+        if any(v is not None for v in final.values()):
+            await self._emit({
+                "type": "metrics",
+                "session_id": self.session_id,
+                "final": True,
+                **final,
+            })
+
         await self._emit({
             "type": "ended",
             "status": status,
             "outcome": outcome,
             "session_id": self.session_id,
         })
-
-        if self._has_db_record:
-            await self._update_session_status(status, outcome)
-            await self._save_metrics()
 
     async def _save_metrics(self) -> None:
         """Persist accumulated TTFB / token metrics to SessionMetrics table."""
@@ -592,19 +615,21 @@ class SarvamPipecatPipeline:
 
     async def _update_session_status(self, status: str, outcome: Optional[str]) -> None:
         from app.models import CallSession
+        from app.database import AsyncSessionLocal
         from sqlalchemy import select
         try:
-            result = await self.db.execute(
-                select(CallSession).where(CallSession.id == self.session_id)
-            )
-            session = result.scalar_one_or_none()
-            if session:
-                session.status = status
-                session.outcome = outcome
-                if self.start_time:
-                    session.duration_seconds = int(time.time() - self.start_time)
-                session.end_time = datetime.now(timezone.utc)
-                await self.db.flush()
+            async with AsyncSessionLocal() as db:
+                async with db.begin():
+                    result = await db.execute(
+                        select(CallSession).where(CallSession.id == self.session_id)
+                    )
+                    row = result.scalar_one_or_none()
+                    if row:
+                        row.status = status
+                        row.outcome = outcome
+                        if self.start_time:
+                            row.duration_seconds = int(time.time() - self.start_time)
+                        row.end_time = datetime.now(timezone.utc)
         except Exception as e:
             logger.error(f"[SarvamPipecat] Session update error: {e}")
 

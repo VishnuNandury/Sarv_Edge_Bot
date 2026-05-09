@@ -109,30 +109,32 @@ class FlowManager:
         return [e for e in self.edges if e.source == node_id]
 
     def get_system_prompt(self) -> str:
-        """Build system prompt for the current node — compact to minimise LLM thinking budget."""
+        """
+        Build system prompt with the task instruction FIRST so the LLM is anchored
+        to the node task before reading context — prevents conversation history from
+        overriding the intended next step.
+        """
         node = self.current_node
-        base = self._build_base_prompt()
         instruction = self._interpolate(node.system_prompt_snippet)
-        return f"{base}\n\nTask: {instruction}"
+        ctx = self.customer_context
+        return (
+            f"NOW SAY — your response must do this: {instruction}\n\n"
+            f"Role: Hindi loan collection agent, empathetic, professional, never threaten.\n"
+            f"Customer: {ctx.get('name', 'Customer')}, "
+            f"Rs.{ctx.get('outstanding_amount', '0')} overdue, "
+            f"{ctx.get('dpd', 0)} DPD.\n"
+            f"Format: 1 sentence max 20 words. All Hindi in Devanagari. "
+            f"English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."
+        )
 
     def _build_base_prompt(self) -> str:
-        """
-        Compact base prompt (~80 tokens).
-
-        Deliberately short: sarvam-30b is a reasoning model whose thinking-token
-        budget scales with prompt size. A 670-token prompt causes ~1500 thinking
-        tokens (10+ second generation). Keeping prompt under ~150 tokens total
-        keeps generation under ~2 seconds.
-        """
+        """Kept for backward compatibility — no longer called by get_system_prompt."""
         ctx = self.customer_context
         return (
             f"Hindi loan collection agent. Empathetic, professional. Never threaten.\n"
-            f"SCRIPT: All Hindi in Devanagari (never Roman transliteration). "
-            f"English only for: loan, EMI, payment, account, UTR, UPI, CIBIL, receipt.\n"
             f"CUSTOMER: {ctx.get('name', 'Customer')}, "
             f"Rs.{ctx.get('outstanding_amount', '0')} overdue, "
-            f"{ctx.get('dpd', 0)} DPD.\n"
-            f"REPLY: Exactly 1 sentence, max 20 words. Spoken text only — no reasoning or labels."
+            f"{ctx.get('dpd', 0)} DPD."
         )
 
     def _interpolate(self, template: str) -> str:
