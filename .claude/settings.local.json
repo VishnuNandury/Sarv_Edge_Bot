@@ -38,7 +38,8 @@
       "Bash(python3 -c \"import pipecat; print\\(pipecat.__file__\\)\")",
       "Bash(git -C \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot\" remote -v)",
       "Bash(Test-Path *)",
-      "Bash(Get-ChildItem *)"
+      "Bash(Get-ChildItem *)",
+      "Bash(dir /s /b \"C:\\\\clu_web\\\\CONVERSE_BUSINESS\\\\Sarvam_Bot\\\\frontend\\\\src\")"
     ]
   }
 }

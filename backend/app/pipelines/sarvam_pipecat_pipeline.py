@@ -178,11 +178,14 @@ class SarvamPipecatPipeline:
         self._task = None
         self._connection = None
 
+        # on_node_change=None: we emit node_change in on_assistant_turn_stopped so
+        # the visualization updates when the agent speaks (not when the customer
+        # speaks), avoiding the "one step ahead" appearance.
         self.flow_manager = FlowManager(
             flow_id=flow_id,
             session_id=session_id,
             customer_context=customer_context,
-            on_node_change=self._on_node_change,
+            on_node_change=None,
         )
 
     # ─────────────────────────── run() ───────────────────────────────────
@@ -495,9 +498,16 @@ class SarvamPipecatPipeline:
             logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
-            # System prompt update only — flow advances in on_user_turn_stopped
-            # after the customer responds (avoids premature advance at action nodes).
+            # Update system prompt (flow position was already advanced in on_user_turn_stopped)
             _update_system_prompt(self.flow_manager.get_system_prompt())
+            # Emit node_change AFTER agent speaks so the visualization reflects
+            # what the agent just said, not what the customer triggered.
+            await self._emit({
+                "type": "node_change",
+                "node_id": self.flow_manager.current_node_id,
+                "node": self.flow_manager.current_node.to_dict(),
+                "session_id": self.session_id,
+            })
 
         # ── Start pipeline in background ──────────────────────────────────
         loop = asyncio.get_event_loop()

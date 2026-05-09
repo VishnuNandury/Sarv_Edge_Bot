@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import create_tables
@@ -199,30 +198,56 @@ async def root():
     return {"name": "Sarvam Bot API", "version": "1.0.0", "docs": "/docs"}
 
 
-# ── Mount Next.js static export (must come LAST, after all /api routes) ──────
-_static = os.path.join(os.path.dirname(__file__), "..", "static")
-if os.path.exists(_static):
-    app.mount("/", StaticFiles(directory=_static, html=True), name="frontend")
+# ── Catch-all: serve Next.js static export with SPA fallback ─────────────
+# StaticFiles(html=True) was replaced because it serves 404.html as a Response
+# (not an exception), bypassing FastAPI exception handlers. This catch-all
+# explicitly falls back to index.html for navigation routes.
+_static_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "static"))
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    if not os.path.isdir(_static_dir):
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+    # Guard against path traversal
+    candidate = os.path.realpath(os.path.join(_static_dir, full_path))
+    if not (candidate == _static_dir or candidate.startswith(_static_dir + os.sep)):
+        return JSONResponse(status_code=400, content={"detail": "Invalid path"})
+
+    # Exact file match
+    if os.path.isfile(candidate):
+        return FileResponse(candidate)
+
+    # Directory → try index.html inside it
+    idx = os.path.join(candidate, "index.html")
+    if os.path.isfile(idx):
+        return FileResponse(idx)
+
+    # Static assets and Next.js internals that don't exist → 404
+    _, ext = os.path.splitext(full_path.rstrip("/"))
+    is_asset = ext.lower() in {
+        ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
+        ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",
+    } or full_path.startswith("_next/") or full_path.startswith("static/")
+    if is_asset:
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+    # SPA fallback for all other paths (navigation routes, RSC payload misses, etc.)
+    spa = os.path.join(_static_dir, "index.html")
+    if os.path.isfile(spa):
+        return FileResponse(spa)
+
+    return JSONResponse(status_code=404, content={"detail": "Not found"})
 
 
 # ─────────────────────────── Error Handlers ──────────────────────────────
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
-    path = str(request.url.path)
-    # Backend paths → JSON 404
-    if any(path.startswith(p) for p in ("/api/", "/ws/", "/docs", "/redoc", "/openapi")):
-        return JSONResponse(
-            status_code=404,
-            content={"detail": "Resource not found", "path": path},
-        )
-    # All other paths are Next.js frontend routes → serve the SPA shell
-    index = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
-    if os.path.exists(index):
-        return FileResponse(index)
     return JSONResponse(
         status_code=404,
-        content={"detail": "Resource not found", "path": path},
+        content={"detail": "Resource not found", "path": str(request.url.path)},
     )
 
 
