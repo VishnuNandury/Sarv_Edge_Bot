@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { isAuthenticated } from '@/lib/auth';
@@ -56,15 +56,22 @@ const stats = [
 export default function LandingPage() {
   const router = useRouter();
   const pathname = usePathname();
+  // Don't render until we confirm we're actually on '/'.
+  // index.html is also served as the SPA shell for deep links (e.g. /conversations/uuid);
+  // rendering nothing until the effect runs means those paths see a blank shell
+  // instead of a flash of landing page content, then the correct page hydrates.
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Only redirect when actually on the landing page. When index.html loads as
-    // the SPA shell for a deep link (e.g. /conversations/uuid), pathname will
-    // be that deep path — don't redirect in that case.
-    if (isAuthenticated() && pathname === '/') {
+    if (pathname !== '/') return; // SPA shell loaded at a deep link — don't render landing page
+    if (isAuthenticated()) {
       router.replace('/dashboard');
+    } else {
+      setShow(true);
     }
   }, [router, pathname]);
+
+  if (!show) return null;
 
   return (
     <div className="min-h-screen bg-[#0a0b0e] text-white">

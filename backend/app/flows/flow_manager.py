@@ -316,7 +316,7 @@ class FlowManager:
         # ── Specific intent matching first ────────────────────────────────
         if has_payment:
             for edge in outgoing:
-                if edge_has(edge, "payment", "paid"):
+                if edge_has(edge, "payment", "paid") and not is_negative_edge(edge):
                     self.transition_to(edge.target)
                     return edge.target
 

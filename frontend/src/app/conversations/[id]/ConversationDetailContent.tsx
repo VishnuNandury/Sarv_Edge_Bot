@@ -56,14 +56,15 @@ export default function ConversationDetailContent({ id }: { id: string }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [sRes, tRes, mRes] = await Promise.all([
-          conversationsApi.get(id),
-          conversationsApi.getTranscript(id),
-          conversationsApi.getMetrics(id),
-        ]);
-        setSession(sRes.data as typeof MOCK_SESSION);
-        setTranscript((tRes.data as { items?: Transcript[] })?.items || []);
-        setMetrics(mRes.data as SessionMetrics);
+        const res = await conversationsApi.get(id);
+        const data = res.data as typeof MOCK_SESSION & {
+          transcripts?: Transcript[];
+          metrics?: SessionMetrics | null;
+        };
+        setSession(data);
+        setTranscript(data.transcripts || []);
+        setMetrics(data.metrics || null);
+        if (data.notes) setNotes(data.notes as string);
       } catch {
         setSession(MOCK_SESSION);
         setTranscript(MOCK_TRANSCRIPT);
