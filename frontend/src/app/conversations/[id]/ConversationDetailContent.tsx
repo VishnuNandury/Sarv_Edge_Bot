@@ -57,14 +57,24 @@ export default function ConversationDetailContent({ id }: { id: string }) {
     const load = async () => {
       try {
         const res = await conversationsApi.get(id);
-        const data = res.data as typeof MOCK_SESSION & {
-          transcripts?: Transcript[];
-          metrics?: SessionMetrics | null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = res.data as any;
+        // The API returns numeric fields (commitment_amount, payment_amount, cost_usd)
+        // as strings. Normalize them to numbers before setting state so that
+        // formatCurrency / toFixed don't throw a TypeError and blank the page.
+        const data = {
+          ...raw,
+          commitment_amount: raw.commitment_amount != null ? Number(raw.commitment_amount) : undefined,
+          payment_amount: raw.payment_amount != null ? Number(raw.payment_amount) : undefined,
+          metrics: raw.metrics ? {
+            ...raw.metrics,
+            cost_usd: raw.metrics.cost_usd != null ? Number(raw.metrics.cost_usd) : undefined,
+          } : null,
         };
         setSession(data);
-        setTranscript(data.transcripts || []);
+        setTranscript(raw.transcripts || []);
         setMetrics(data.metrics || null);
-        if (data.notes) setNotes(data.notes as string);
+        if (raw.notes) setNotes(raw.notes as string);
       } catch {
         setSession(MOCK_SESSION);
         setTranscript(MOCK_TRANSCRIPT);
