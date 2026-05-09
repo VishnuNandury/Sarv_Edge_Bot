@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -55,12 +55,16 @@ const stats = [
 
 export default function LandingPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    // Only redirect when actually on the landing page. When index.html loads as
+    // the SPA shell for a deep link (e.g. /conversations/uuid), pathname will
+    // be that deep path — don't redirect in that case.
+    if (isAuthenticated() && pathname === '/') {
       router.replace('/dashboard');
     }
-  }, [router]);
+  }, [router, pathname]);
 
   return (
     <div className="min-h-screen bg-[#0a0b0e] text-white">
