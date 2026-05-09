@@ -118,12 +118,16 @@ class FlowManager:
         instruction = self._interpolate(node.system_prompt_snippet)
         ctx = self.customer_context
         return (
-            f"NOW SAY — your response must do this: {instruction}\n\n"
+            f"YOUR ONLY TASK: {instruction}\n\n"
+            f"STRICT RULES:\n"
+            f"- Ask ONLY the question above. Stop after the question mark.\n"
+            f"- Do NOT add follow-up questions, comments, or extra sentences.\n"
+            f"- Do NOT ask about anything not specified above.\n"
             f"Role: Hindi loan collection agent, empathetic, professional, never threaten.\n"
             f"Customer: {ctx.get('name', 'Customer')}, "
             f"Rs.{ctx.get('outstanding_amount', '0')} overdue, "
             f"{ctx.get('dpd', 0)} DPD.\n"
-            f"Format: 1 sentence max 20 words. All Hindi in Devanagari. "
+            f"Format: 1-2 sentences max. All Hindi in Devanagari. "
             f"English only for: loan, EMI, payment, UTR, UPI, CIBIL, receipt."
         )
 

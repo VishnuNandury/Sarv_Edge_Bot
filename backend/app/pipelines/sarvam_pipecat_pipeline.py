@@ -472,19 +472,28 @@ class SarvamPipecatPipeline:
             await self._emit_transcript("customer", text, 0)
 
             old_node_id = self.flow_manager.current_node_id
-            self.flow_manager.process_customer_response(text)
+            current_node_type = self.flow_manager.current_node.type
+            transitioned = self.flow_manager.process_customer_response(text)
 
-            # On node transition, inject a reinforcement message directly into the
-            # conversation history so the LLM can't drift to a "natural" next step
-            # based on prior turns — the context message dominates the history.
+            # For single-edge action/end-adjacent nodes, advance after the customer
+            # responds — not in on_assistant_turn_stopped, which fires before the
+            # customer has had a chance to answer the node's question.
+            # Start-type nodes (greeting) auto-advance in on_assistant_turn_stopped.
+            if not transitioned and current_node_type not in ('start', 'end'):
+                target = self.flow_manager.process_single_edge_transition()
+                if target:
+                    transitioned = target
+
+            # On any transition, inject a strict reinforcement message so the LLM
+            # asks only what the next node specifies.
             if self.flow_manager.current_node_id != old_node_id:
                 new_node = self.flow_manager.current_node
                 context.messages.append({
                     "role": "system",
                     "content": (
-                        f"[MOVED TO: {new_node.label}] "
-                        f"Your immediate next response MUST: "
-                        f"{new_node.system_prompt_snippet[:120]}"
+                        f"[NEXT NODE: {new_node.label}] "
+                        f"ONLY say: {new_node.system_prompt_snippet[:200]} "
+                        f"Do NOT add any extra questions or sentences."
                     ),
                 })
 
@@ -496,22 +505,23 @@ class SarvamPipecatPipeline:
             logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
-            # Advance single-edge action nodes (e.g. greeting→visit_check) AFTER
-            # agent speaks so the LLM sees the correct next-node system prompt on
-            # the following turn, not mid-generation.
+            # Only auto-advance start-type nodes (e.g. greeting → visit_check).
+            # Action/decision nodes must wait for the customer to respond first
+            # (handled in on_user_turn_stopped) so we don't skip over them.
             old_node_id = self.flow_manager.current_node_id
-            target = self.flow_manager.process_single_edge_transition()
-            if target and self.flow_manager.current_node_id != old_node_id:
-                new_node = self.flow_manager.current_node
-                context.messages.append({
-                    "role": "system",
-                    "content": (
-                        f"[NEXT: {new_node.label}] "
-                        f"Next response MUST: "
-                        f"{new_node.system_prompt_snippet[:120]}"
-                    ),
-                })
-            _update_system_prompt(self.flow_manager.get_system_prompt())
+            if self.flow_manager.current_node.type == 'start':
+                target = self.flow_manager.process_single_edge_transition()
+                if target and self.flow_manager.current_node_id != old_node_id:
+                    new_node = self.flow_manager.current_node
+                    context.messages.append({
+                        "role": "system",
+                        "content": (
+                            f"[NEXT NODE: {new_node.label}] "
+                            f"ONLY say: {new_node.system_prompt_snippet[:200]} "
+                            f"Do NOT add any extra questions or sentences."
+                        ),
+                    })
+                    _update_system_prompt(self.flow_manager.get_system_prompt())
             # Emit node_change AFTER agent speaks so the visualization reflects
             # what the agent just said, not what the customer triggered.
             await self._emit({
