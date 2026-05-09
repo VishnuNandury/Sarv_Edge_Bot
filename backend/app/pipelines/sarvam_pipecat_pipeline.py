@@ -336,7 +336,7 @@ class SarvamPipecatPipeline:
                 model="bulbul:v3",
                 voice=self.voice_id,    # female: priya,neha,pooja,simran,kavya,ritu / male: rahul,rohan,amit,dev
                 language=pipecat_lang,  # must match script: hi-IN for Devanagari
-                min_buffer_size=30,     # 30 chars: safe floor for 1-sentence Hindi responses (~40-70 chars typical)
+                min_buffer_size=60,     # 60 chars: prevents tiny trailing chunks (e.g. short follow-up sentences) that sound truncated
                 max_chunk_length=400,   # large synthesis units = no mid-sentence prosodic resets
             ),
         )
@@ -506,6 +506,17 @@ class SarvamPipecatPipeline:
             await self._save_transcript("customer", text)
             await self._emit_transcript("customer", text, 0)
 
+        @assistant_aggregator.event_handler("on_assistant_turn_started")
+        async def on_assistant_turn_started(aggregator):
+            # Emit the node that is currently active so the UI highlights it
+            # as soon as the agent starts speaking — not after it finishes.
+            await self._emit({
+                "type": "node_change",
+                "node_id": self.flow_manager.current_node_id,
+                "node": self.flow_manager.current_node.to_dict(),
+                "session_id": self.session_id,
+            })
+
         @assistant_aggregator.event_handler("on_assistant_turn_stopped")
         async def on_assistant_turn_stopped(aggregator, message):
             text = getattr(message, "content", str(message))
@@ -535,14 +546,39 @@ class SarvamPipecatPipeline:
             logger.info(f"[SarvamPipecat:{self.session_id}] Agent ({len(text)} chars): {text[:200]}")
             await self._save_transcript("agent", text)
             await self._emit_transcript("agent", text, 0)
-            # Emit node_change AFTER agent speaks so the visualization reflects
-            # what the agent just said, not what the customer triggered.
             await self._emit({
                 "type": "node_change",
                 "node_id": self.flow_manager.current_node_id,
                 "node": self.flow_manager.current_node.to_dict(),
                 "session_id": self.session_id,
             })
+
+            # Auto-end call when the flow reaches an end node (farewell spoken).
+            # Wait 2 s so the client finishes playing the buffered audio before
+            # the pipeline tears down.
+            if self.flow_manager.is_complete() and not self.is_ended:
+                current_end = self.flow_manager.current_node_id
+                logger.info(
+                    f"[SarvamPipecat:{self.session_id}] "
+                    f"Flow complete at node '{current_end}' — ending session in 2s"
+                )
+                await asyncio.sleep(2.0)
+                history = set(self.flow_manager.node_history)
+                # Derive outcome from which end node was reached and which key
+                # mid-flow nodes were visited.
+                if current_end == "visit_no_end":
+                    outcome = "no_visit"
+                elif current_end == "payment_no_end":
+                    outcome = "no_payment"
+                elif "thank_payment" in history or "receipt_check" in history:
+                    outcome = "payment_confirmed"
+                elif current_end == "end" and "payment_amount" in history:
+                    outcome = "payment_confirmed"   # field-visit flow payment path
+                elif "get_commitment" in history or "commitment_request" in history:
+                    outcome = "commitment"
+                else:
+                    outcome = "no_commitment"
+                await self.end_session(status="completed", outcome=outcome)
 
         # ── Start pipeline in background ──────────────────────────────────
         loop = asyncio.get_event_loop()

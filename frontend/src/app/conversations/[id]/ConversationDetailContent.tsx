@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft, Clock, User, Bot, GitBranch, IndianRupee, FileText, Phone, CheckCircle2, AlertCircle } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { conversationsApi } from '@/lib/api';
@@ -47,18 +47,19 @@ const NODE_FLOW = ['Greeting', 'Identity Verification', 'Overdue Information', '
 
 export default function ConversationDetailContent({ id: propId }: { id: string }) {
   const router = useRouter();
+  const pathname = usePathname();
 
-  // useParams() returns "placeholder" because Next.js reads route params from the
-  // RSC payload (which hardcodes id="placeholder" for the static prerender).
-  // Read the real UUID directly from the browser URL instead.
-  const [id] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const m = window.location.pathname.match(/\/conversations\/([^/]+)/);
-      const urlId = m?.[1];
-      if (urlId && urlId !== 'placeholder') return urlId;
-    }
-    return propId;
-  });
+  // usePathname() returns the real browser URL path and updates on every
+  // client-side navigation — unlike useParams() which returns "placeholder"
+  // from the static RSC payload, and unlike useState() which only reads the
+  // URL once on mount and doesn't update when the user navigates to another
+  // conversation without a full page reload.
+  const id = useMemo(() => {
+    if (!pathname) return propId;
+    const m = pathname.match(/\/conversations\/([^/]+)/);
+    const urlId = m?.[1];
+    return (urlId && urlId !== 'placeholder') ? urlId : propId;
+  }, [pathname, propId]);
 
   const [session, setSession] = useState<(CallSession & { customer_name: string; customer_phone: string }) | null>(null);
   const [transcript, setTranscript] = useState<Transcript[]>([]);
@@ -72,8 +73,10 @@ export default function ConversationDetailContent({ id: propId }: { id: string }
       setLoading(false);
       return;
     }
+    setLoading(true);
+    setApiError(null);
+    setSession(null);
     const load = async () => {
-      setApiError(null);
       try {
         const res = await conversationsApi.get(id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
