@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, User, Bot, GitBranch, IndianRupee, FileText, Phone, CheckCircle2 } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft, Clock, User, Bot, GitBranch, IndianRupee, FileText, Phone, CheckCircle2, AlertCircle } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { conversationsApi } from '@/lib/api';
 import { formatDuration, formatDateTime, formatCurrency, getLatencyColor } from '@/lib/utils';
@@ -45,23 +45,32 @@ const MOCK_METRICS: SessionMetrics = {
 
 const NODE_FLOW = ['Greeting', 'Identity Verification', 'Overdue Information', 'Listen Situation', 'Handle Objection', 'Get Commitment', 'Farewell'];
 
-export default function ConversationDetailContent({ id }: { id: string }) {
+export default function ConversationDetailContent({ id: propId }: { id: string }) {
   const router = useRouter();
+  const params = useParams();
+  // useParams() reads the real UUID from the browser URL — critical for static export
+  // where the pre-rendered HTML has params.id = "placeholder"
+  const id = (params?.id as string) || propId;
+
   const [session, setSession] = useState<(CallSession & { customer_name: string; customer_phone: string }) | null>(null);
   const [transcript, setTranscript] = useState<Transcript[]>([]);
   const [metrics, setMetrics] = useState<SessionMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id || id === 'placeholder') {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
+      setApiError(null);
       try {
         const res = await conversationsApi.get(id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const raw = res.data as any;
-        // The API returns numeric fields (commitment_amount, payment_amount, cost_usd)
-        // as strings. Normalize them to numbers before setting state so that
-        // formatCurrency / toFixed don't throw a TypeError and blank the page.
+        // Normalize numeric fields — API may return them as strings
         const data = {
           ...raw,
           commitment_amount: raw.commitment_amount != null ? Number(raw.commitment_amount) : undefined,
@@ -75,7 +84,9 @@ export default function ConversationDetailContent({ id }: { id: string }) {
         setTranscript(raw.transcripts || []);
         setMetrics(data.metrics || null);
         if (raw.notes) setNotes(raw.notes as string);
-      } catch {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setApiError(`API error for session "${id}": ${msg}`);
         setSession(MOCK_SESSION);
         setTranscript(MOCK_TRANSCRIPT);
         setMetrics(MOCK_METRICS);
@@ -99,13 +110,40 @@ export default function ConversationDetailContent({ id }: { id: string }) {
     );
   }
 
-  if (!session) return null;
+  if (!session) {
+    return (
+      <div className="p-6">
+        <button onClick={() => router.push('/conversations')} className="flex items-center gap-2 text-[#94a3b8] hover:text-[#f1f5f9] text-sm transition-colors mb-4">
+          <ArrowLeft size={16} />Back to Conversations
+        </button>
+        <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-5 text-sm">
+          <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-red-400 font-semibold mb-1">Conversation not found</div>
+            <div className="text-[#94a3b8]">Could not load data for session ID:</div>
+            <div className="font-mono text-xs text-[#64748b] mt-1 break-all">{id || '(no ID resolved)'}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-5">
       <button onClick={() => router.push('/conversations')} className="flex items-center gap-2 text-[#94a3b8] hover:text-[#f1f5f9] text-sm transition-colors">
         <ArrowLeft size={16} />Back to Conversations
       </button>
+
+      {apiError && (
+        <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm">
+          <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-red-400 font-medium mb-1">Failed to load conversation data — showing mock fallback</div>
+            <div className="text-red-300/70 font-mono text-xs break-all">{apiError}</div>
+            <div className="text-[#475569] text-xs mt-1">Session ID from URL: <span className="font-mono text-[#94a3b8]">{id}</span></div>
+          </div>
+        </div>
+      )}
 
       {/* Session Header */}
       <div className="bg-[#1a1d24] rounded-xl border border-[#2a2d38] p-5">

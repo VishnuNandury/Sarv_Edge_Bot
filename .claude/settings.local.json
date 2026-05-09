@@ -39,7 +39,8 @@
       "Bash(git -C \"C:/clu_web/CONVERSE_BUSINESS/Sarvam_Bot\" remote -v)",
       "Bash(Test-Path *)",
       "Bash(Get-ChildItem *)",
-      "Bash(dir /s /b \"C:\\\\clu_web\\\\CONVERSE_BUSINESS\\\\Sarvam_Bot\\\\frontend\\\\src\")"
+      "Bash(dir /s /b \"C:\\\\clu_web\\\\CONVERSE_BUSINESS\\\\Sarvam_Bot\\\\frontend\\\\src\")",
+      "PowerShell(head *)"
     ]
   }
 }

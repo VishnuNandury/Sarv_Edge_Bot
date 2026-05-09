@@ -4,6 +4,7 @@ FastAPI backend entry point.
 """
 import logging
 import os
+import re
 import sys
 from contextlib import asynccontextmanager
 
@@ -204,6 +205,9 @@ async def root():
 # explicitly falls back to index.html for navigation routes.
 _static_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "static"))
 
+# Matches /conversations/{id} and /conversations/{id}/... sub-paths
+_CONV_RE = re.compile(r'^conversations/([^/]+)(/(.*))?$')
+
 
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
@@ -232,6 +236,25 @@ async def serve_spa(full_path: str):
     } or full_path.startswith("_next/") or full_path.startswith("static/")
     if is_asset:
         return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+    # Conversation detail routes: serve the placeholder prerender so Next.js
+    # loads ConversationDetail (not the root landing page). Real ID is read
+    # client-side via useParams(). Also handles RSC payload requests (.txt).
+    m = _CONV_RE.match(full_path.lstrip("/"))
+    if m:
+        conv_id = m.group(1)
+        sub = m.group(3) or ""
+        if conv_id != "placeholder":
+            placeholder_dir = os.path.join(_static_dir, "conversations", "placeholder")
+            # RSC payload: /conversations/{id}/index.txt
+            if sub in ("index.txt",):
+                rsc = os.path.join(placeholder_dir, "index.txt")
+                if os.path.isfile(rsc):
+                    return FileResponse(rsc)
+            # HTML shell
+            ph = os.path.join(placeholder_dir, "index.html")
+            if os.path.isfile(ph):
+                return FileResponse(ph)
 
     # SPA fallback for all other paths (navigation routes, RSC payload misses, etc.)
     spa = os.path.join(_static_dir, "index.html")

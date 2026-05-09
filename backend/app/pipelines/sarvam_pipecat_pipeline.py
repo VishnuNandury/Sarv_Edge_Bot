@@ -277,7 +277,7 @@ class SarvamPipecatPipeline:
                 api_key=settings.SARVAM_API_KEY,
                 settings=SarvamLLMSettings(
                     model=settings.SARVAM_LLM_MODEL,
-                    temperature=0.7,
+                    temperature=0.3,
                     max_tokens=_max_tokens,
                     reasoning_effort="low",
                     top_p=0.9,
@@ -292,7 +292,7 @@ class SarvamPipecatPipeline:
                 api_key=settings.OPENAI_API_KEY,
                 settings=OpenAILLMSettings(
                     model="gpt-4o-mini",
-                    temperature=0.7,
+                    temperature=0.3,
                     max_tokens=_max_tokens,
                     top_p=0.9,
                 ),
@@ -303,7 +303,7 @@ class SarvamPipecatPipeline:
                 api_key=settings.GROQ_API_KEY,
                 settings=GroqLLMService.Settings(
                     model="llama-3.3-70b-versatile",
-                    temperature=0.7,
+                    temperature=0.3,
                     max_tokens=_max_tokens,
                     top_p=0.9,
                 ),
